@@ -1,4 +1,4 @@
-import type { Dharma, ContentStatus, Category } from "@/types/database";
+import type { Dharma, DharmaWord, ContentStatus, ContentCategory } from "@/types/database";
 import { serviceCall, toSlug, now, getSupabase } from "./base";
 import type { ServiceResult } from "./base";
 
@@ -7,9 +7,17 @@ import type { ServiceResult } from "./base";
 export interface DharmaFormInput {
   title: string;
   description: string;
+  translation: string;
   category_id: string;
   youtube_url: string;
   status: ContentStatus;
+}
+
+export interface DharmaWordInput {
+  id?: string;          // present when editing an existing word
+  word: string;
+  meaning: string;
+  display_order: number;
 }
 
 // ── Dharma service ─────────────────────────────────────────
@@ -19,7 +27,7 @@ export const dharmaService = {
     return serviceCall((sb) =>
       sb
         .from("dharmas")
-        .select("*, category:categories(id, name)")
+        .select("*, category:content_categories(id, name)")
         .eq("is_deleted", false)
         .order("created_at", { ascending: false })
     );
@@ -31,18 +39,73 @@ export const dharmaService = {
     );
   },
 
-  async getCategories(): Promise<ServiceResult<Category[]>> {
+  async getCategories(): Promise<ServiceResult<ContentCategory[]>> {
     const sb = getSupabase();
     const { data, error } = await sb
-      .from("categories")
+      .from("content_categories")
       .select("*, content_type:content_types!inner(table_name)")
       .eq("is_active", true)
       .eq("content_type.table_name", "dharmas")
       .order("name");
 
     if (error) return { data: null, error: error.message };
-    return { data: data as unknown as Category[], error: null };
+    return { data: data as unknown as ContentCategory[], error: null };
   },
+
+  // ── Words ──────────────────────────────────────────────
+
+  async getWords(dharmaId: string): Promise<ServiceResult<DharmaWord[]>> {
+    return serviceCall((sb) =>
+      sb
+        .from("dharma_words")
+        .select("*")
+        .eq("dharma_id", dharmaId)
+        .order("display_order", { ascending: true })
+    );
+  },
+
+  async saveWords(dharmaId: string, words: DharmaWordInput[]): Promise<ServiceResult<null>> {
+    const sb = getSupabase();
+
+    // Get existing word IDs for this dharma
+    const { data: existing } = await sb
+      .from("dharma_words")
+      .select("id")
+      .eq("dharma_id", dharmaId);
+
+    const existingIds = new Set((existing ?? []).map((w) => w.id));
+    const incomingIds = new Set(words.filter((w) => w.id).map((w) => w.id));
+
+    // Delete words that are no longer in the list
+    const toDelete = [...existingIds].filter((id) => !incomingIds.has(id));
+    if (toDelete.length > 0) {
+      const { error } = await sb
+        .from("dharma_words")
+        .delete()
+        .in("id", toDelete);
+      if (error) return { data: null, error: error.message };
+    }
+
+    // Upsert remaining words
+    if (words.length > 0) {
+      const rows = words.map((w, i) => ({
+        ...(w.id ? { id: w.id } : {}),
+        dharma_id: dharmaId,
+        word: w.word,
+        meaning: w.meaning,
+        display_order: i,
+      }));
+
+      const { error } = await sb
+        .from("dharma_words")
+        .upsert(rows, { onConflict: "id" });
+      if (error) return { data: null, error: error.message };
+    }
+
+    return { data: null, error: null };
+  },
+
+  // ── CRUD ───────────────────────────────────────────────
 
   async create(input: DharmaFormInput): Promise<ServiceResult<Dharma>> {
     const timestamp = now();
@@ -53,6 +116,7 @@ export const dharmaService = {
           title: input.title,
           slug: toSlug(input.title),
           description: input.description,
+          translation: input.translation,
           category_id: input.category_id || null,
           youtube_url: input.youtube_url || null,
           status: input.status,
@@ -76,6 +140,7 @@ export const dharmaService = {
           title: input.title,
           slug: toSlug(input.title),
           description: input.description,
+          translation: input.translation,
           category_id: input.category_id || null,
           youtube_url: input.youtube_url || null,
           status,

@@ -1,25 +1,25 @@
-import type { Category, ContentType } from "@/types/database";
+import type { ContentCategory, ContentType } from "@/types/database";
 import { serviceCall, toSlug, now } from "./base";
 import type { ServiceResult } from "./base";
 
 // ── Input types ────────────────────────────────────────────
 
-export interface CreateCategoryInput {
+export interface CreateContentCategoryInput {
   content_type_id: string;
   name: string;
   description: string;
   is_active: boolean;
 }
 
-export type UpdateCategoryInput = CreateCategoryInput;
+export type UpdateContentCategoryInput = CreateContentCategoryInput;
 
-// ── Category service ───────────────────────────────────────
+// ── Content Category service ───────────────────────────────
 
-export const categoryService = {
-  async getAll(): Promise<ServiceResult<Category[]>> {
+export const contentCategoryService = {
+  async getAll(): Promise<ServiceResult<ContentCategory[]>> {
     return serviceCall((sb) =>
       sb
-        .from("categories")
+        .from("content_categories")
         .select("*, content_type:content_types(*)")
         .order("display_order")
     );
@@ -35,13 +35,13 @@ export const categoryService = {
     );
   },
 
-  async create(input: CreateCategoryInput): Promise<ServiceResult<Category>> {
+  async create(input: CreateContentCategoryInput): Promise<ServiceResult<ContentCategory>> {
     const slug = toSlug(input.name);
     const timestamp = now();
 
     return serviceCall((sb) =>
       sb
-        .from("categories")
+        .from("content_categories")
         .insert({
           content_type_id: input.content_type_id,
           name: input.name,
@@ -56,12 +56,12 @@ export const categoryService = {
     );
   },
 
-  async update(id: string, input: UpdateCategoryInput): Promise<ServiceResult<Category>> {
+  async update(id: string, input: UpdateContentCategoryInput): Promise<ServiceResult<ContentCategory>> {
     const slug = toSlug(input.name);
 
     return serviceCall((sb) =>
       sb
-        .from("categories")
+        .from("content_categories")
         .update({
           content_type_id: input.content_type_id,
           name: input.name,
@@ -78,14 +78,14 @@ export const categoryService = {
 
   async delete(id: string): Promise<ServiceResult<null>> {
     return serviceCall((sb) =>
-      sb.from("categories").delete().eq("id", id)
+      sb.from("content_categories").delete().eq("id", id)
     ) as Promise<ServiceResult<null>>;
   },
 
   async toggleActive(id: string, currentActive: boolean): Promise<ServiceResult<null>> {
     return serviceCall((sb) =>
       sb
-        .from("categories")
+        .from("content_categories")
         .update({ is_active: !currentActive, updated_at: now() })
         .eq("id", id)
     ) as Promise<ServiceResult<null>>;

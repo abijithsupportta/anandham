@@ -13,7 +13,7 @@ export default function EmptyState({
   if (asTableRow) {
     return (
       <tr>
-        <td colSpan={colSpan} className="py-12 text-center text-sm text-gray-400">
+        <td colSpan={colSpan} className="py-12 text-center text-sm text-muted">
           {message}
         </td>
       </tr>
@@ -21,7 +21,7 @@ export default function EmptyState({
   }
 
   return (
-    <div className="py-12 text-center text-sm text-gray-400">
+    <div className="py-12 text-center text-sm text-muted">
       {message}
     </div>
   );

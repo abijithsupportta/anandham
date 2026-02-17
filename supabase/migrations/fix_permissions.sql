@@ -24,7 +24,7 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public
 -- ── Step 3: Ensure RLS is enabled ──────────────────────────
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.content_types ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.categories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.content_categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.authors ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.krithis ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.slokas ENABLE ROW LEVEL SECURITY;
@@ -33,6 +33,7 @@ ALTER TABLE public.dharma_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.guru_photos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.author_assignments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.dharma_words ENABLE ROW LEVEL SECURITY;
 
 -- ── Step 4: Recreate helper functions ──────────────────────
 CREATE OR REPLACE FUNCTION public.is_admin()
@@ -87,19 +88,19 @@ CREATE POLICY content_types_update ON public.content_types
 CREATE POLICY content_types_delete ON public.content_types
   FOR DELETE USING (public.is_super_admin());
 
--- Categories
-DROP POLICY IF EXISTS categories_select ON public.categories;
-DROP POLICY IF EXISTS categories_insert ON public.categories;
-DROP POLICY IF EXISTS categories_update ON public.categories;
-DROP POLICY IF EXISTS categories_delete ON public.categories;
+-- Content Categories
+DROP POLICY IF EXISTS content_categories_select ON public.content_categories;
+DROP POLICY IF EXISTS content_categories_insert ON public.content_categories;
+DROP POLICY IF EXISTS content_categories_update ON public.content_categories;
+DROP POLICY IF EXISTS content_categories_delete ON public.content_categories;
 
-CREATE POLICY categories_select ON public.categories
+CREATE POLICY content_categories_select ON public.content_categories
   FOR SELECT USING (TRUE);
-CREATE POLICY categories_insert ON public.categories
+CREATE POLICY content_categories_insert ON public.content_categories
   FOR INSERT WITH CHECK (public.is_admin());
-CREATE POLICY categories_update ON public.categories
+CREATE POLICY content_categories_update ON public.content_categories
   FOR UPDATE USING (public.is_admin());
-CREATE POLICY categories_delete ON public.categories
+CREATE POLICY content_categories_delete ON public.content_categories
   FOR DELETE USING (public.is_admin());
 
 -- Authors
@@ -219,6 +220,29 @@ DROP POLICY IF EXISTS audit_logs_select ON public.audit_logs;
 
 CREATE POLICY audit_logs_select ON public.audit_logs
   FOR SELECT USING (public.is_admin());
+
+-- Dharma Words
+DROP POLICY IF EXISTS dharma_words_select ON public.dharma_words;
+DROP POLICY IF EXISTS dharma_words_insert ON public.dharma_words;
+DROP POLICY IF EXISTS dharma_words_update ON public.dharma_words;
+DROP POLICY IF EXISTS dharma_words_delete ON public.dharma_words;
+
+CREATE POLICY dharma_words_select ON public.dharma_words
+  FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM public.dharmas d
+      WHERE d.id = dharma_id
+      AND d.status = 'published'
+      AND NOT d.is_deleted
+    )
+    OR public.is_admin()
+  );
+CREATE POLICY dharma_words_insert ON public.dharma_words
+  FOR INSERT WITH CHECK (public.is_admin());
+CREATE POLICY dharma_words_update ON public.dharma_words
+  FOR UPDATE USING (public.is_admin());
+CREATE POLICY dharma_words_delete ON public.dharma_words
+  FOR DELETE USING (public.is_admin());
 
 -- ── Step 6: Ensure your profile has super_admin role ───────
 UPDATE public.profiles

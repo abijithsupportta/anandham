@@ -39,9 +39,9 @@ export interface ContentType {
   updated_at: string;
 }
 
-// ── Categories ─────────────────────────────────────────────────────────
+// ── Content Categories ─────────────────────────────────────────────────
 
-export interface Category {
+export interface ContentCategory {
   id: string;
   content_type_id: string;
   name: string;
@@ -63,12 +63,18 @@ export interface Author {
   id: string;
   name: string;
   bio: string;
+  email?: string | null;
+  phone?: string | null;
+  address?: string | null;
   photo_url?: string | null;
+  user_id?: string | null;
   is_verified: boolean;
   is_active: boolean;
   created_by?: string | null;
   created_at: string;
   updated_at: string;
+  // Joined
+  assignments?: AuthorAssignment[];
 }
 
 // ── Krithis ────────────────────────────────────────────────────────────
@@ -91,7 +97,7 @@ export interface Krithi {
   created_at: string;
   updated_at: string;
   // Joined
-  category?: Category;
+  category?: ContentCategory;
   author?: Author;
   slokas?: Sloka[];
   sloka_count?: number;
@@ -122,6 +128,7 @@ export interface Dharma {
   title: string;
   slug: string;
   description: string;
+  translation: string;
   category_id?: string | null;
   author_id?: string | null;
   language: ContentLanguage;
@@ -135,10 +142,23 @@ export interface Dharma {
   created_at: string;
   updated_at: string;
   // Joined
-  category?: Category;
+  category?: ContentCategory;
   author?: Author;
   items?: DharmaItem[];
   item_count?: number;
+  words?: DharmaWord[];
+}
+
+// ── Dharma Words ───────────────────────────────────────────────────────
+
+export interface DharmaWord {
+  id: string;
+  dharma_id: string;
+  word: string;
+  meaning: string;
+  display_order: number;
+  created_at: string;
+  updated_at: string;
 }
 
 // ── Dharma Items ───────────────────────────────────────────────────────
@@ -177,7 +197,94 @@ export interface GuruPhoto {
   created_at: string;
   updated_at: string;
   // Joined
-  category?: Category;
+  category?: ContentCategory;
+  author?: Author;
+  images?: GuruPhotoImage[];
+}
+
+// ── Guru Photo Images ──────────────────────────────────────────────────
+
+export interface GuruPhotoImage {
+  id: string;
+  guru_photo_id: string;
+  image_url: string;
+  display_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+// ── Blog Categories ────────────────────────────────────────────────────
+
+export interface GuruKeerthanam {
+  id: string;
+  title: string;
+  slug: string;
+  description: string;
+  author_name: string;
+  language: ContentLanguage;
+  youtube_url?: string | null;
+  status: ContentStatus;
+  published_at?: string | null;
+  is_deleted: boolean;
+  deleted_at?: string | null;
+  created_by?: string | null;
+  updated_by?: string | null;
+  created_at: string;
+  updated_at: string;
+  // Joined
+  categories?: ContentCategory[];
+}
+
+export interface GuruKeerthanamCategory {
+  id: string;
+  keerthanam_id: string;
+  category_id: string;
+  created_at: string;
+  // Joined
+  category?: ContentCategory;
+}
+
+// ── Blog Categories ────────────────────────────────────────────────────
+
+export interface BlogCategory {
+  id: string;
+  parent_id?: string | null;
+  name: string;
+  slug: string;
+  description: string;
+  display_order: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  // Joined / computed
+  children?: BlogCategory[];
+  parent?: BlogCategory;
+}
+
+// ── Blogs ──────────────────────────────────────────────────────────────
+
+export interface Blog {
+  id: string;
+  title: string;
+  slug: string;
+  excerpt: string;
+  body: string;
+  cover_images: string[];
+  youtube_url?: string | null;
+  category_id?: string | null;
+  author_id?: string | null;
+  language: ContentLanguage;
+  tags: string[];
+  status: ContentStatus;
+  published_at?: string | null;
+  is_deleted: boolean;
+  deleted_at?: string | null;
+  created_by?: string | null;
+  updated_by?: string | null;
+  created_at: string;
+  updated_at: string;
+  // Joined
+  category?: BlogCategory;
   author?: Author;
 }
 
@@ -220,7 +327,7 @@ export interface DashboardStats {
   total_dharmas: number;
   total_guru_photos: number;
   total_authors: number;
-  total_categories: number;
+  total_content_categories: number;
   published_krithis: number;
   draft_krithis: number;
   published_dharmas: number;

@@ -54,18 +54,18 @@ export default function LoginPage() {
         <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-indigo-600 shadow-lg overflow-hidden">
           <Image src="/web-logo.png" alt="Anandham" width={64} height={64} className="h-full w-full object-cover" priority />
         </div>
-        <h1 className="text-2xl font-bold text-gray-900">Anandham Admin</h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <h1 className="text-2xl font-bold text-foreground">Anandham Admin</h1>
+        <p className="mt-1 text-sm text-muted">
           Sign in to manage the Anandham platform
         </p>
       </div>
 
       {/* Login Card */}
-      <div className="rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
+      <div className="rounded-2xl border border-border-main bg-card p-8 shadow-sm">
         <form onSubmit={handleSubmit} className="space-y-5">
           {/* Error */}
           {error && (
-            <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/50 dark:text-red-300">
               {error}
             </div>
           )}
@@ -74,7 +74,7 @@ export default function LoginPage() {
           <div>
             <label
               htmlFor="email"
-              className="mb-1.5 block text-sm font-medium text-gray-700"
+              className="mb-1.5 block text-sm font-medium text-foreground"
             >
               Email address
             </label>
@@ -85,7 +85,7 @@ export default function LoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="info@abijithcb.com"
               required
-              className="block w-full rounded-lg border border-gray-300 px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-400 shadow-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+              className="block w-full rounded-lg border border-input-border bg-input-bg px-3.5 py-2.5 text-sm text-foreground placeholder-muted shadow-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
             />
           </div>
 
@@ -93,7 +93,7 @@ export default function LoginPage() {
           <div>
             <label
               htmlFor="password"
-              className="mb-1.5 block text-sm font-medium text-gray-700"
+              className="mb-1.5 block text-sm font-medium text-foreground"
             >
               Password
             </label>
@@ -105,12 +105,12 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter your password"
                 required
-                className="block w-full rounded-lg border border-gray-300 px-3.5 py-2.5 pr-10 text-sm text-gray-900 placeholder-gray-400 shadow-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                className="block w-full rounded-lg border border-input-border bg-input-bg px-3.5 py-2.5 pr-10 text-sm text-foreground placeholder-muted shadow-sm transition focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-foreground"
               >
                 {showPassword ? (
                   <EyeOff className="h-4 w-4" />
@@ -137,7 +137,7 @@ export default function LoginPage() {
         </form>
       </div>
 
-      <p className="mt-6 text-center text-xs text-gray-400">
+      <p className="mt-6 text-center text-xs text-muted">
         Anandham Management Admin &copy; {new Date().getFullYear()}
       </p>
     </div>

@@ -88,7 +88,7 @@ export default function KrithisPage() {
         <select
           value={statusFilter}
           onChange={(e) => { setStatusFilter(e.target.value as "all" | ContentStatus); setPage(1); }}
-          className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+          className="rounded-lg border border-input-border bg-input-bg px-3 py-2 text-sm text-foreground focus:border-indigo-500 dark:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-500"
         >
           <option value="all">All Status</option>
           <option value="draft">Draft</option>
@@ -97,27 +97,27 @@ export default function KrithisPage() {
       </div>
 
       {/* Table */}
-      <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+      <div className="overflow-hidden rounded-xl border border-border-main bg-card shadow-sm">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-gray-200 bg-gray-50">
-              <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Krithi</th>
-              <th className="hidden px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 md:table-cell">Category</th>
-              <th className="px-6 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500">Status</th>
-              <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">Actions</th>
+            <tr className="border-b border-border-main bg-surface-hover">
+              <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">Krithi</th>
+              <th className="hidden px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted md:table-cell">Category</th>
+              <th className="px-6 py-3 text-center text-xs font-semibold uppercase tracking-wider text-muted">Status</th>
+              <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted">Actions</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-100">
+          <tbody className="divide-y divide-border-light">
             {paged.map((krithi) => (
-              <tr key={krithi.id} className="transition hover:bg-gray-50">
+              <tr key={krithi.id} className="transition hover:bg-surface-hover">
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
-                    <div className="rounded-lg bg-purple-50 p-2">
+                    <div className="rounded-lg bg-purple-50 dark:bg-purple-500/10 p-2">
                       <BookOpen className="h-4 w-4 text-purple-600" />
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-gray-900">{krithi.title}</p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-sm font-semibold text-foreground">{krithi.title}</p>
+                      <p className="text-xs text-muted">
                         {krithi.description.slice(0, 60)}{krithi.description.length > 60 ? "..." : ""}
                       </p>
                     </div>
@@ -125,7 +125,7 @@ export default function KrithisPage() {
                   </div>
                 </td>
                 <td className="hidden px-6 py-4 md:table-cell">
-                  <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700">
+                  <span className="rounded-full bg-gray-100 dark:bg-gray-800 px-2.5 py-1 text-xs font-medium text-foreground">
                     {krithi.category?.name ?? "—"}
                   </span>
                 </td>
@@ -134,13 +134,13 @@ export default function KrithisPage() {
                 </td>
                 <td className="px-6 py-4 text-right">
                   <div className="flex items-center justify-end gap-2">
-                    <Link href={`/krithis/${krithi.id}`} className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100">
+                    <Link href={`/krithis/${krithi.id}`} className="rounded-md p-1.5 text-muted hover:bg-surface-hover">
                       <Pencil className="h-4 w-4" />
                     </Link>
-                    <button onClick={() => handleToggleStatus(krithi)} className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100" title={krithi.status === "draft" ? "Publish" : "Unpublish"}>
+                    <button onClick={() => handleToggleStatus(krithi)} className="rounded-md p-1.5 text-muted hover:bg-surface-hover" title={krithi.status === "draft" ? "Publish" : "Unpublish"}>
                       <Eye className="h-4 w-4" />
                     </button>
-                    <button onClick={() => handleDelete(krithi.id)} className="rounded-md p-1.5 text-red-500 hover:bg-red-50">
+                    <button onClick={() => handleDelete(krithi.id)} className="rounded-md p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10">
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </div>

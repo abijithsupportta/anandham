@@ -1,4 +1,4 @@
-import type { Krithi, ContentStatus, Category } from "@/types/database";
+import type { Krithi, ContentStatus, ContentCategory } from "@/types/database";
 import { serviceCall, toSlug, now, getSupabase } from "./base";
 import type { ServiceResult } from "./base";
 
@@ -19,7 +19,7 @@ export const krithiService = {
     return serviceCall((sb) =>
       sb
         .from("krithis")
-        .select("*, category:categories(id, name)")
+        .select("*, category:content_categories(id, name)")
         .eq("is_deleted", false)
         .order("created_at", { ascending: false })
     );
@@ -31,17 +31,17 @@ export const krithiService = {
     );
   },
 
-  async getCategories(): Promise<ServiceResult<Category[]>> {
+  async getCategories(): Promise<ServiceResult<ContentCategory[]>> {
     const sb = getSupabase();
     const { data, error } = await sb
-      .from("categories")
+      .from("content_categories")
       .select("*, content_type:content_types!inner(table_name)")
       .eq("is_active", true)
       .eq("content_type.table_name", "krithis")
       .order("name");
 
     if (error) return { data: null, error: error.message };
-    return { data: data as unknown as Category[], error: null };
+    return { data: data as unknown as ContentCategory[], error: null };
   },
 
   async create(input: KrithiFormInput): Promise<ServiceResult<Krithi>> {

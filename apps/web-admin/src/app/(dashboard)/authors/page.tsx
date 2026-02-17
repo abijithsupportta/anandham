@@ -10,8 +10,10 @@ import {
   Check,
   X,
   CheckCircle,
-  Calendar,
+  Mail,
+  Phone,
 } from "lucide-react";
+import Link from "next/link";
 import { authorService } from "@/services";
 import { useQuery } from "@/hooks/useQuery";
 import { useToast } from "@/hooks/useToast";
@@ -21,20 +23,6 @@ import PageHeader from "@/components/ui/page-header";
 import LoadingState from "@/components/ui/loading-state";
 import ErrorState from "@/components/ui/error-state";
 
-interface AuthorFormData {
-  name: string;
-  bio: string;
-  is_verified: boolean;
-  is_active: boolean;
-}
-
-const emptyForm: AuthorFormData = {
-  name: "",
-  bio: "",
-  is_verified: false,
-  is_active: true,
-};
-
 export default function AuthorsPage() {
   const { toast } = useToast();
   const { data: authors, loading, error, refetch } = useQuery<Author>(
@@ -43,16 +31,15 @@ export default function AuthorsPage() {
 
   const [search, setSearch] = useState("");
   const [activeFilter, setActiveFilter] = useState<"all" | "active" | "inactive">("all");
-  const [showForm, setShowForm] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState<AuthorFormData>(emptyForm);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [page, setPage] = useState(1);
+  const perPage = 10;
 
   const filtered = authors.filter((a) => {
     const matchesSearch =
       a.name.toLowerCase().includes(search.toLowerCase()) ||
-      a.bio.toLowerCase().includes(search.toLowerCase());
+      (a.email ?? "").toLowerCase().includes(search.toLowerCase()) ||
+      (a.bio ?? "").toLowerCase().includes(search.toLowerCase());
     const matchesFilter =
       activeFilter === "all" ||
       (activeFilter === "active" && a.is_active) ||
@@ -60,44 +47,8 @@ export default function AuthorsPage() {
     return matchesSearch && matchesFilter;
   });
 
-  function handleAdd() {
-    setEditingId(null);
-    setForm(emptyForm);
-    setShowForm(true);
-  }
-
-  function handleEdit(author: Author) {
-    setEditingId(author.id);
-    setForm({
-      name: author.name,
-      bio: author.bio,
-      is_verified: author.is_verified,
-      is_active: author.is_active,
-    });
-    setShowForm(true);
-  }
-
-  async function handleSave() {
-    if (!form.name.trim()) {
-      toast("Name is required", "error");
-      return;
-    }
-
-    const result = editingId
-      ? await authorService.update(editingId, form)
-      : await authorService.create(form);
-
-    if (result.error) {
-      toast(result.error, "error");
-      return;
-    }
-
-    toast(editingId ? "Author updated" : "Author created", "success");
-    setShowForm(false);
-    setEditingId(null);
-    setForm(emptyForm);
-    refetch();
-  }
+  const totalPages = Math.max(1, Math.ceil(filtered.length / perPage));
+  const paged = filtered.slice((page - 1) * perPage, page * perPage);
 
   async function handleDelete(id: string) {
     const result = await authorService.delete(id);
@@ -134,10 +85,10 @@ export default function AuthorsPage() {
         title="Authors"
         subtitle={`${authors.length} total · ${activeCount} active · ${verifiedCount} verified`}
         action={
-          <button onClick={handleAdd} className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700">
+          <Link href="/authors/new" className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700">
             <Plus className="h-4 w-4" />
             Add Author
-          </button>
+          </Link>
         }
       />
 
@@ -149,7 +100,7 @@ export default function AuthorsPage() {
             <button
               key={f.value}
               onClick={() => { setActiveFilter(f.value); setPage(1); }}
-              className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${activeFilter === f.value ? "bg-indigo-600 text-white" : "border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"}`}
+              className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${activeFilter === f.value ? "bg-indigo-600 text-white" : "border border-border-main bg-card text-gray-600 dark:text-gray-400 hover:bg-surface-hover"}`}
             >
               {f.label}
             </button>
@@ -157,80 +108,55 @@ export default function AuthorsPage() {
         </div>
       </div>
 
-      {/* Add/Edit Form */}
-      {showForm && (
-        <div className="rounded-xl border border-indigo-200 bg-indigo-50/30 p-6 shadow-sm">
-          <h2 className="mb-4 text-lg font-semibold text-gray-900">{editingId ? "Edit Author" : "New Author"}</h2>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Name *</label>
-              <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" placeholder="Author name" />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">Bio</label>
-              <input type="text" value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500" placeholder="Short biography" />
-            </div>
-          </div>
-          <div className="mt-4 flex items-center gap-6">
-            <label className="flex items-center gap-2">
-              <input type="checkbox" checked={form.is_verified} onChange={(e) => setForm({ ...form, is_verified: e.target.checked })} className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
-              <span className="text-sm text-gray-700">Verified</span>
-            </label>
-            <label className="flex items-center gap-2">
-              <input type="checkbox" checked={form.is_active} onChange={(e) => setForm({ ...form, is_active: e.target.checked })} className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
-              <span className="text-sm text-gray-700">Active</span>
-            </label>
-          </div>
-          <div className="mt-4 flex gap-3">
-            <button onClick={handleSave} className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700">
-              <Check className="h-4 w-4" />
-              {editingId ? "Update" : "Create"}
-            </button>
-            <button onClick={() => { setShowForm(false); setEditingId(null); setForm(emptyForm); }} className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50">
-              <X className="h-4 w-4" />
-              Cancel
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* Authors List */}
       <div className="space-y-3">
-        {filtered.map((author) => (
-          <div key={author.id} className={`flex items-center gap-4 rounded-xl border bg-white p-4 shadow-sm transition ${author.is_active ? "border-gray-200" : "border-gray-100 opacity-60"}`}>
-            <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-purple-100">
+        {paged.map((author) => (
+          <div key={author.id} className={`flex items-center gap-4 rounded-xl border bg-card p-4 shadow-sm transition ${author.is_active ? "border-border-main" : "border-border-light opacity-60"}`}>
+            <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-full bg-purple-100 dark:bg-purple-500/10">
               <PenTool className="h-5 w-5 text-purple-600" />
             </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <h3 className="text-sm font-semibold text-gray-900">{author.name}</h3>
+                <h3 className="text-sm font-semibold text-foreground">{author.name}</h3>
                 {author.is_verified && <CheckCircle className="h-4 w-4 text-blue-500" />}
-                {!author.is_active && <span className="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-500">Inactive</span>}
+                {!author.is_active && <span className="rounded bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 text-xs text-muted">Inactive</span>}
               </div>
-              <p className="truncate text-xs text-gray-500">{author.bio}</p>
-            </div>
-            <div className="hidden items-center gap-1 text-sm text-gray-500 sm:flex">
-              <Calendar className="h-3.5 w-3.5" />
-              <span>{new Date(author.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}</span>
+              <div className="mt-0.5 flex flex-wrap items-center gap-3 text-xs text-muted">
+                {author.email && (
+                  <span className="flex items-center gap-1">
+                    <Mail className="h-3 w-3" />
+                    {author.email}
+                  </span>
+                )}
+                {author.phone && (
+                  <span className="flex items-center gap-1">
+                    <Phone className="h-3 w-3" />
+                    {author.phone}
+                  </span>
+                )}
+                {!author.email && !author.phone && author.bio && (
+                  <span className="truncate">{author.bio}</span>
+                )}
+              </div>
             </div>
             <div className="flex items-center gap-1">
-              <button onClick={() => handleToggle(author.id, "is_verified")} className={`rounded-lg p-2 text-sm transition ${author.is_verified ? "text-blue-600 hover:bg-blue-50" : "text-gray-400 hover:bg-gray-50"}`} title={author.is_verified ? "Remove verification" : "Verify"}>
+              <button onClick={() => handleToggle(author.id, "is_verified")} className={`rounded-lg p-2 text-sm transition ${author.is_verified ? "text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-500/10" : "text-muted hover:bg-surface-hover"}`} title={author.is_verified ? "Remove verification" : "Verify"}>
                 <CheckCircle className="h-4 w-4" />
               </button>
-              <button onClick={() => handleEdit(author)} className="rounded-lg p-2 text-gray-400 transition hover:bg-gray-50 hover:text-indigo-600" title="Edit">
+              <Link href={`/authors/${author.id}`} className="rounded-lg p-2 text-muted transition hover:bg-surface-hover hover:text-indigo-600 dark:text-indigo-400" title="Edit">
                 <Pencil className="h-4 w-4" />
-              </button>
+              </Link>
               {deleteConfirm === author.id ? (
                 <div className="flex items-center gap-1">
-                  <button onClick={() => handleDelete(author.id)} className="rounded-lg p-2 text-red-600 transition hover:bg-red-50" title="Confirm delete">
+                  <button onClick={() => handleDelete(author.id)} className="rounded-lg p-2 text-red-600 transition hover:bg-red-50 dark:hover:bg-red-500/10" title="Confirm delete">
                     <Check className="h-4 w-4" />
                   </button>
-                  <button onClick={() => setDeleteConfirm(null)} className="rounded-lg p-2 text-gray-400 transition hover:bg-gray-50" title="Cancel">
+                  <button onClick={() => setDeleteConfirm(null)} className="rounded-lg p-2 text-muted transition hover:bg-surface-hover" title="Cancel">
                     <X className="h-4 w-4" />
                   </button>
                 </div>
               ) : (
-                <button onClick={() => setDeleteConfirm(author.id)} className="rounded-lg p-2 text-gray-400 transition hover:bg-gray-50 hover:text-red-600" title="Delete">
+                <button onClick={() => setDeleteConfirm(author.id)} className="rounded-lg p-2 text-muted transition hover:bg-surface-hover hover:text-red-600" title="Delete">
                   <Trash2 className="h-4 w-4" />
                 </button>
               )}
@@ -239,11 +165,11 @@ export default function AuthorsPage() {
         ))}
 
         {filtered.length === 0 && (
-          <div className="py-12 text-center text-sm text-gray-400">No authors found</div>
+          <div className="py-12 text-center text-sm text-muted">No authors found</div>
         )}
       </div>
 
-      <Pagination currentPage={page} totalPages={Math.max(1, Math.ceil(filtered.length / 10))} onPageChange={setPage} />
+      <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
     </div>
   );
 }

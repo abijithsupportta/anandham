@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import type { Category, ContentType } from "@/types/database";
-import { categoryService } from "@/services";
+import type { ContentCategory, ContentType } from "@/types/database";
+import { contentCategoryService } from "@/services";
 import { useQuery } from "@/hooks/useQuery";
 import { useToast } from "@/hooks/useToast";
 import {
@@ -48,7 +48,7 @@ const sectionIcons: Record<string, React.ComponentType<{ className?: string }>> 
 
 // ── Page Component ─────────────────────────────────────────
 
-export default function CategoriesPage() {
+export default function ContentCategoriesPage() {
   const { toast } = useToast();
 
   // Data fetching via service layer
@@ -57,10 +57,10 @@ export default function CategoriesPage() {
     loading: catLoading,
     error: catError,
     refetch: refetchCategories,
-  } = useQuery<Category>(() => categoryService.getAll());
+  } = useQuery<ContentCategory>(() => contentCategoryService.getAll());
 
   const { data: contentTypes, loading: ctLoading, error: ctError } = useQuery<ContentType>(
-    () => categoryService.getContentTypes()
+    () => contentCategoryService.getContentTypes()
   );
 
   // UI state
@@ -95,7 +95,7 @@ export default function CategoriesPage() {
     setShowForm(true);
   }
 
-  function handleEdit(cat: Category) {
+  function handleEdit(cat: ContentCategory) {
     setEditingId(cat.id);
     setForm({
       content_type_id: cat.content_type_id,
@@ -121,8 +121,8 @@ export default function CategoriesPage() {
     setSaving(true);
 
     const result = editingId
-      ? await categoryService.update(editingId, form)
-      : await categoryService.create(form);
+      ? await contentCategoryService.update(editingId, form)
+      : await contentCategoryService.create(form);
 
     setSaving(false);
 
@@ -138,7 +138,7 @@ export default function CategoriesPage() {
   }, [form, editingId, refetchCategories, toast]);
 
   async function handleDelete(id: string) {
-    const result = await categoryService.delete(id);
+    const result = await contentCategoryService.delete(id);
     setDeleteConfirm(null);
     if (result.error) {
       toast(result.error, "error");
@@ -148,8 +148,8 @@ export default function CategoriesPage() {
     refetchCategories();
   }
 
-  async function handleToggleActive(cat: Category) {
-    const result = await categoryService.toggleActive(cat.id, cat.is_active);
+  async function handleToggleActive(cat: ContentCategory) {
+    const result = await contentCategoryService.toggleActive(cat.id, cat.is_active);
     if (result.error) {
       toast(result.error, "error");
       return;
@@ -164,13 +164,13 @@ export default function CategoriesPage() {
 
   // ── Render ───────────────────────────────────────────────
 
-  if (loading) return <LoadingState message="Loading categories..." />;
-  if (catError || ctError) return <ErrorState message={catError || ctError || "Failed to load categories"} onRetry={refetchCategories} />;
+  if (loading) return <LoadingState message="Loading content categories..." />;
+  if (catError || ctError) return <ErrorState message={catError || ctError || "Failed to load content categories"} onRetry={refetchCategories} />;
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Categories"
+        title="Content Categories"
         subtitle="Manage categories for each content section"
         action={
           <button
@@ -190,7 +190,7 @@ export default function CategoriesPage() {
           className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
             activeTab === "all"
               ? "bg-indigo-600 text-white"
-              : "border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+              : "border border-border-main bg-card text-gray-600 dark:text-gray-400 hover:bg-surface-hover"
           }`}
         >
           All ({categories.length})
@@ -204,7 +204,7 @@ export default function CategoriesPage() {
               className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition ${
                 activeTab === ct.id
                   ? "bg-indigo-600 text-white"
-                  : "border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+                  : "border border-border-main bg-card text-gray-600 dark:text-gray-400 hover:bg-surface-hover"
               }`}
             >
               <Icon className="h-4 w-4" />
@@ -217,25 +217,25 @@ export default function CategoriesPage() {
       <SearchInput
         value={search}
         onChange={setSearch}
-        placeholder="Search categories..."
+        placeholder="Search content categories..."
         className="sm:w-72"
       />
 
       {/* Add/Edit Form */}
       {showForm && (
-        <div className="rounded-xl border border-indigo-200 bg-indigo-50/30 p-6 shadow-sm">
-          <h2 className="mb-4 text-lg font-semibold text-gray-900">
+        <div className="rounded-xl border border-indigo-200 dark:border-indigo-500 dark:border-indigo-400/30 bg-indigo-50 dark:bg-indigo-500/10/30 p-6 shadow-sm">
+          <h2 className="mb-4 text-lg font-semibold text-foreground">
             {editingId ? "Edit Category" : "New Category"}
           </h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
+              <label className="mb-1 block text-sm font-medium text-foreground">
                 Content Section *
               </label>
               <select
                 value={form.content_type_id}
                 onChange={(e) => setForm({ ...form, content_type_id: e.target.value })}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                className="w-full rounded-lg border border-input-border bg-input-bg px-3 py-2 text-sm text-foreground focus:border-indigo-500 dark:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-500"
               >
                 <option value="">Select section</option>
                 {contentTypes.map((ct) => (
@@ -246,26 +246,26 @@ export default function CategoriesPage() {
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
+              <label className="mb-1 block text-sm font-medium text-foreground">
                 Name *
               </label>
               <input
                 type="text"
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                className="w-full rounded-lg border border-input-border bg-input-bg px-3 py-2 text-sm text-foreground focus:border-indigo-500 dark:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                 placeholder="Category name"
               />
             </div>
             <div className="sm:col-span-2">
-              <label className="mb-1 block text-sm font-medium text-gray-700">
+              <label className="mb-1 block text-sm font-medium text-foreground">
                 Description
               </label>
               <input
                 type="text"
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                className="w-full rounded-lg border border-input-border bg-input-bg px-3 py-2 text-sm text-foreground focus:border-indigo-500 dark:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                 placeholder="Short description"
               />
             </div>
@@ -276,9 +276,9 @@ export default function CategoriesPage() {
                 type="checkbox"
                 checked={form.is_active}
                 onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
-                className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                className="h-4 w-4 rounded border-input-border text-indigo-600 dark:text-indigo-400 focus:ring-indigo-500"
               />
-              <span className="text-sm text-gray-700">Active</span>
+              <span className="text-sm text-foreground">Active</span>
             </label>
           </div>
           <div className="mt-4 flex gap-3">
@@ -292,7 +292,7 @@ export default function CategoriesPage() {
             </button>
             <button
               onClick={handleCancel}
-              className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+              className="inline-flex items-center gap-2 rounded-lg border border-input-border bg-card px-4 py-2 text-sm font-medium text-foreground transition hover:bg-surface-hover"
             >
               <X className="h-4 w-4" />
               Cancel
@@ -309,24 +309,24 @@ export default function CategoriesPage() {
           return (
             <div
               key={cat.id}
-              className={`flex items-center gap-4 rounded-xl border bg-white p-4 shadow-sm transition ${
-                cat.is_active ? "border-gray-200" : "border-gray-100 opacity-60"
+              className={`flex items-center gap-4 rounded-xl border bg-card p-4 shadow-sm transition ${
+                cat.is_active ? "border-border-main" : "border-border-light opacity-60"
               }`}
             >
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-semibold text-gray-900">{cat.name}</h3>
+                  <h3 className="text-sm font-semibold text-foreground">{cat.name}</h3>
                   {!cat.is_active && (
-                    <span className="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-500">
+                    <span className="rounded bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 text-xs text-muted">
                       Inactive
                     </span>
                   )}
                 </div>
-                <p className="text-xs text-gray-500">{cat.description}</p>
+                <p className="text-xs text-muted">{cat.description}</p>
               </div>
 
               <div className="hidden sm:flex">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 dark:bg-gray-800 px-2.5 py-1 text-xs font-medium text-foreground">
                   <Icon className="h-3 w-3" />
                   {ct?.display_name ?? "Unknown"}
                 </span>
@@ -337,8 +337,8 @@ export default function CategoriesPage() {
                   onClick={() => handleToggleActive(cat)}
                   className={`rounded-lg p-2 text-sm transition ${
                     cat.is_active
-                      ? "text-green-600 hover:bg-green-50"
-                      : "text-gray-400 hover:bg-gray-50"
+                      ? "text-green-600 hover:bg-green-50 dark:hover:bg-green-500/10"
+                      : "text-muted hover:bg-surface-hover"
                   }`}
                   title={cat.is_active ? "Deactivate" : "Activate"}
                 >
@@ -346,7 +346,7 @@ export default function CategoriesPage() {
                 </button>
                 <button
                   onClick={() => handleEdit(cat)}
-                  className="rounded-lg p-2 text-gray-400 transition hover:bg-gray-50 hover:text-indigo-600"
+                  className="rounded-lg p-2 text-muted transition hover:bg-surface-hover hover:text-indigo-600 dark:text-indigo-400"
                   title="Edit"
                 >
                   <Pencil className="h-4 w-4" />
@@ -355,14 +355,14 @@ export default function CategoriesPage() {
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => handleDelete(cat.id)}
-                      className="rounded-lg p-2 text-red-600 transition hover:bg-red-50"
+                      className="rounded-lg p-2 text-red-600 transition hover:bg-red-50 dark:hover:bg-red-500/10"
                       title="Confirm delete"
                     >
                       <Check className="h-4 w-4" />
                     </button>
                     <button
                       onClick={() => setDeleteConfirm(null)}
-                      className="rounded-lg p-2 text-gray-400 transition hover:bg-gray-50"
+                      className="rounded-lg p-2 text-muted transition hover:bg-surface-hover"
                       title="Cancel"
                     >
                       <X className="h-4 w-4" />
@@ -371,7 +371,7 @@ export default function CategoriesPage() {
                 ) : (
                   <button
                     onClick={() => setDeleteConfirm(cat.id)}
-                    className="rounded-lg p-2 text-gray-400 transition hover:bg-gray-50 hover:text-red-600"
+                    className="rounded-lg p-2 text-muted transition hover:bg-surface-hover hover:text-red-600"
                     title="Delete"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -382,7 +382,7 @@ export default function CategoriesPage() {
           );
         })}
 
-        {filtered.length === 0 && <EmptyState message="No categories found" />}
+        {filtered.length === 0 && <EmptyState message="No content categories found" />}
       </div>
     </div>
   );

@@ -8,7 +8,7 @@ export const ROUTES = {
   LOGIN: "/login",
   USERS: "/users",
   AUTHORS: "/authors",
-  CATEGORIES: "/categories",
+  CONTENT_CATEGORIES: "/content-categories",
   KRITHIS: "/krithis",
   DHARMAS: "/dharmas",
   GURU_PHOTOS: "/guru-photos",

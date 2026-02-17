@@ -31,7 +31,7 @@ const tableOptions = [
   "dharmas",
   "dharma_items",
   "guru_photos",
-  "categories",
+  "content_categories",
   "authors",
 ] as const;
 
@@ -42,9 +42,9 @@ const actionIcons: Record<AuditAction, typeof PlusCircle> = {
 };
 
 const actionColors: Record<AuditAction, string> = {
-  INSERT: "text-green-600 bg-green-50",
-  UPDATE: "text-blue-600 bg-blue-50",
-  DELETE: "text-red-600 bg-red-50",
+  INSERT: "text-green-600 bg-green-50 dark:bg-green-500/10",
+  UPDATE: "text-blue-600 bg-blue-50 dark:bg-blue-500/10",
+  DELETE: "text-red-600 bg-red-50 dark:bg-red-500/10",
 };
 
 const tableLabels: Record<string, string> = {
@@ -53,7 +53,7 @@ const tableLabels: Record<string, string> = {
   dharmas: "Dharmas",
   dharma_items: "Dharma Items",
   guru_photos: "Guru Photos",
-  categories: "Categories",
+  content_categories: "Content Categories",
   authors: "Authors",
   profiles: "Profiles",
 };
@@ -107,7 +107,7 @@ export default function AuditLogPage() {
         <select
           value={tableFilter}
           onChange={(e) => setTableFilter(e.target.value)}
-          className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+          className="rounded-lg border border-input-border bg-input-bg px-3 py-2 text-sm text-foreground focus:border-indigo-500 dark:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-500"
         >
           <option value="all">All Tables</option>
           {tableOptions.filter((t) => t !== "all").map((t) => (
@@ -119,7 +119,7 @@ export default function AuditLogPage() {
             <button
               key={f.value}
               onClick={() => setActionFilter(f.value)}
-              className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${actionFilter === f.value ? "bg-indigo-600 text-white" : "border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"}`}
+              className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${actionFilter === f.value ? "bg-indigo-600 text-white" : "border border-border-main bg-card text-gray-600 dark:text-gray-400 hover:bg-surface-hover"}`}
             >
               {f.label}
             </button>
@@ -133,45 +133,45 @@ export default function AuditLogPage() {
           const isExpanded = expandedId === log.id;
 
           return (
-            <div key={log.id} className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+            <div key={log.id} className="overflow-hidden rounded-xl border border-border-main bg-card shadow-sm">
               <button
                 onClick={() => setExpandedId(isExpanded ? null : log.id)}
-                className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-gray-50"
+                className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-surface-hover"
               >
                 <div className={`rounded-lg p-1.5 ${actionColors[log.action]}`}>
                   <ActionIcon className="h-4 w-4" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <span className="rounded bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-700">{tableLabels[log.table_name] || log.table_name}</span>
-                    <span className="text-sm font-medium text-gray-900">{log.action === "INSERT" ? "Created" : log.action === "UPDATE" ? "Updated" : "Deleted"}</span>
-                    <span className="hidden text-xs text-gray-400 sm:inline">#{log.record_id}</span>
+                    <span className="rounded bg-gray-100 dark:bg-gray-800 px-2 py-0.5 text-xs font-medium text-foreground">{tableLabels[log.table_name] || log.table_name}</span>
+                    <span className="text-sm font-medium text-foreground">{log.action === "INSERT" ? "Created" : log.action === "UPDATE" ? "Updated" : "Deleted"}</span>
+                    <span className="hidden text-xs text-muted sm:inline">#{log.record_id}</span>
                   </div>
                 </div>
-                <div className="hidden items-center gap-1.5 text-xs text-gray-500 md:flex">
+                <div className="hidden items-center gap-1.5 text-xs text-muted md:flex">
                   <User className="h-3.5 w-3.5" />
                   {log.user?.full_name ?? "System"}
                 </div>
-                <div className="flex items-center gap-1.5 text-xs text-gray-400">
+                <div className="flex items-center gap-1.5 text-xs text-muted">
                   <Calendar className="h-3.5 w-3.5" />
                   {formatDate(log.changed_at)}
                 </div>
-                {isExpanded ? <ChevronUp className="h-4 w-4 text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-400" />}
+                {isExpanded ? <ChevronUp className="h-4 w-4 text-muted" /> : <ChevronDown className="h-4 w-4 text-muted" />}
               </button>
 
               {isExpanded && (
-                <div className="border-t border-gray-100 bg-gray-50/50 px-4 py-3">
+                <div className="border-t border-border-light bg-surface-hover/50 px-4 py-3">
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     {log.old_data && (
                       <div>
                         <h4 className="mb-1 text-xs font-semibold uppercase text-red-500">Old Data</h4>
-                        <pre className="overflow-x-auto rounded-lg border border-red-100 bg-red-50/50 p-3 text-xs text-gray-700">{JSON.stringify(log.old_data, null, 2)}</pre>
+                        <pre className="overflow-x-auto rounded-lg border border-red-100 dark:border-red-500/20 bg-red-50 dark:bg-red-500/10 p-3 text-xs text-foreground">{JSON.stringify(log.old_data, null, 2)}</pre>
                       </div>
                     )}
                     {log.new_data && (
                       <div>
                         <h4 className="mb-1 text-xs font-semibold uppercase text-green-500">New Data</h4>
-                        <pre className="overflow-x-auto rounded-lg border border-green-100 bg-green-50/50 p-3 text-xs text-gray-700">{JSON.stringify(log.new_data, null, 2)}</pre>
+                        <pre className="overflow-x-auto rounded-lg border border-green-100 dark:border-green-500/20 bg-green-50 dark:bg-green-500/10 p-3 text-xs text-foreground">{JSON.stringify(log.new_data, null, 2)}</pre>
                       </div>
                     )}
                   </div>
@@ -182,7 +182,7 @@ export default function AuditLogPage() {
         })}
 
         {filtered.length === 0 && (
-          <div className="py-12 text-center text-sm text-gray-400">No audit logs found</div>
+          <div className="py-12 text-center text-sm text-muted">No audit logs found</div>
         )}
       </div>
 

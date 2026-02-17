@@ -90,9 +90,9 @@ export default function DiagnosticsPage() {
       if (jwt) {
         headers["Authorization"] = `Bearer ${jwt}`;
       }
-      const rawResp = await fetch(`${url}/rest/v1/categories?select=id&limit=1`, { headers });
+      const rawResp = await fetch(`${url}/rest/v1/content_categories?select=id&limit=1`, { headers });
       diag.push({
-        label: "Raw API call (categories)",
+        label: "Raw API call (content_categories)",
         status: rawResp.ok ? "pass" : "fail",
         detail: rawResp.ok
           ? `Status ${rawResp.status} - API accessible`
@@ -104,9 +104,9 @@ export default function DiagnosticsPage() {
     setResults([...diag]);
 
     // 6. Test via supabase-js client
-    const { data: catData, error: catError } = await supabase.from("categories").select("id").limit(1);
+    const { data: catData, error: catError } = await supabase.from("content_categories").select("id").limit(1);
     diag.push({
-      label: "Supabase-JS categories query",
+      label: "Supabase-JS content_categories query",
       status: catError ? "fail" : "pass",
       detail: catError
         ? `Error: ${catError.message} (code: ${catError.code}, hint: ${catError.hint || "none"}, details: ${catError.details || "none"})`
@@ -143,7 +143,7 @@ export default function DiagnosticsPage() {
           ? `Cannot read profile: ${profileError.message} (code: ${profileError.code})`
           : `role=${profile.role}, is_active=${profile.is_active}, name=${profile.full_name}. ${
               profile.role !== "super_admin" && profile.role !== "admin"
-                ? "⚠️ Role must be 'super_admin' or 'admin' to create categories!"
+                ? "⚠️ Role must be 'super_admin' or 'admin' to create content categories!"
                 : "✓ Admin role confirmed"
             }`,
       });
@@ -154,7 +154,7 @@ export default function DiagnosticsPage() {
 
     // 9. Test INSERT (dry run - actually insert then delete)
     diag.push({
-      label: "Category INSERT test",
+      label: "Content Category INSERT test",
       status: "checking",
       detail: "Testing insert permission...",
     });
@@ -162,7 +162,7 @@ export default function DiagnosticsPage() {
 
     const testSlug = `_diag_test_${Date.now()}`;
     const { data: insertData, error: insertError } = await supabase
-      .from("categories")
+      .from("content_categories")
       .insert({
         name: "_diagnostic_test",
         slug: testSlug,
@@ -175,15 +175,15 @@ export default function DiagnosticsPage() {
 
     if (insertError) {
       diag[diag.length - 1] = {
-        label: "Category INSERT test",
+        label: "Content Category INSERT test",
         status: "fail",
         detail: `INSERT FAILED: ${insertError.message} (code: ${insertError.code}, hint: ${insertError.hint || "none"}, details: ${insertError.details || "none"})`,
       };
     } else {
       // Clean up
-      await supabase.from("categories").delete().eq("id", insertData.id);
+      await supabase.from("content_categories").delete().eq("id", insertData.id);
       diag[diag.length - 1] = {
-        label: "Category INSERT test",
+        label: "Content Category INSERT test",
         status: "pass",
         detail: "INSERT succeeded (test row cleaned up)",
       };
@@ -194,17 +194,17 @@ export default function DiagnosticsPage() {
   }
 
   const statusColors = {
-    pass: "bg-green-100 text-green-800 border-green-200",
-    fail: "bg-red-100 text-red-800 border-red-200",
-    warn: "bg-amber-100 text-amber-800 border-amber-200",
-    checking: "bg-blue-100 text-blue-800 border-blue-200",
+    pass: "bg-green-100 dark:bg-green-500/15 text-green-800 dark:text-green-300 border-green-200 dark:border-green-500/30",
+    fail: "bg-red-100 dark:bg-red-500/15 text-red-800 dark:text-red-300 border-red-200 dark:border-red-500/30",
+    warn: "bg-amber-100 dark:bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-500/30",
+    checking: "bg-blue-100 dark:bg-blue-500/15 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-500/30",
   };
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Supabase Diagnostics</h1>
-        <p className="mt-1 text-sm text-gray-500">
+        <h1 className="text-2xl font-bold text-foreground">Supabase Diagnostics</h1>
+        <p className="mt-1 text-sm text-muted">
           Testing connection, auth, permissions, and RLS policies
         </p>
       </div>
@@ -226,16 +226,16 @@ export default function DiagnosticsPage() {
       </div>
 
       {running && (
-        <div className="flex items-center gap-2 text-sm text-gray-500">
+        <div className="flex items-center gap-2 text-sm text-muted">
           <div className="h-4 w-4 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent" />
           Running diagnostics...
         </div>
       )}
 
       {!running && (
-        <div className="rounded-lg bg-gray-50 border border-gray-200 p-4">
-          <h3 className="font-semibold text-gray-900 mb-2">Next Steps</h3>
-          <div className="text-sm text-gray-600 space-y-1">
+        <div className="rounded-lg bg-surface-hover border border-border-main p-4">
+          <h3 className="font-semibold text-foreground mb-2">Next Steps</h3>
+          <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
             <p>If you see ❌ on raw API or Supabase-JS queries:</p>
             <ol className="list-decimal ml-5 space-y-1">
               <li>Go to <strong>Supabase Dashboard → SQL Editor</strong></li>

@@ -1,14 +1,32 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
-import type { Category } from "@/types/database";
+import type { ContentCategory } from "@/types/database";
 import { krithiService, type KrithiFormInput } from "@/services/krithi.service";
 import { useToast } from "@/hooks/useToast";
-import { ArrowLeft, Save, Globe } from "lucide-react";
+import {
+  ArrowLeft,
+  Save,
+  Globe,
+  Maximize2,
+  Minimize2,
+  Type,
+  AlignLeft,
+  Youtube,
+} from "lucide-react";
 import Link from "next/link";
 import PageHeader from "@/components/ui/page-header";
 import LoadingState from "@/components/ui/loading-state";
+
+// ── Helpers ────────────────────────────────────────────────
+
+function countStats(text: string) {
+  const chars = text.length;
+  const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+  const lines = text ? text.split("\n").length : 0;
+  return { chars, words, lines };
+}
 
 export default function KrithiFormPage() {
   const router = useRouter();
@@ -18,7 +36,9 @@ export default function KrithiFormPage() {
 
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [categories, setCategories] = useState<ContentCategory[]>([]);
+  const [expanded, setExpanded] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const [form, setForm] = useState<KrithiFormInput>({
     title: "",
@@ -86,111 +106,199 @@ export default function KrithiFormPage() {
     router.push("/krithis");
   }
 
+  // Keyboard shortcut: Ctrl+S to save, Ctrl+Shift+S to publish
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
+        e.preventDefault();
+        handleSave(e.shiftKey);
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [form, isNew, saving]
+  );
+
+  // Tab key inserts spaces instead of moving focus
+  function handleTabKey(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === "Tab") {
+      e.preventDefault();
+      const ta = e.currentTarget;
+      const start = ta.selectionStart;
+      const end = ta.selectionEnd;
+      const newValue = form.description.substring(0, start) + "  " + form.description.substring(end);
+      setForm((prev) => ({ ...prev, description: newValue }));
+      requestAnimationFrame(() => {
+        ta.selectionStart = ta.selectionEnd = start + 2;
+      });
+    }
+  }
+
+  const stats = countStats(form.description);
+
   // ── Render ───────────────────────────────────────────────
 
   if (loading) return <LoadingState message="Loading krithi..." />;
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className={`space-y-6 ${expanded ? "fixed inset-0 z-50 overflow-y-auto bg-surface-hover p-6" : "mx-auto max-w-4xl"}`} onKeyDown={handleKeyDown}>
       <PageHeader
         title={isNew ? "New Krithi" : "Edit Krithi"}
         subtitle={isNew ? "Create a new sacred poem" : "Update krithi details"}
         action={
-          <Link href="/krithis" className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700">
+          <Link href="/krithis" className="inline-flex items-center gap-2 text-sm text-muted hover:text-foreground">
             <ArrowLeft className="h-4 w-4" />
             Back
           </Link>
         }
       />
 
-      <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm space-y-5">
-        {/* Category */}
-        <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">Category</label>
-          <select
-            name="category_id"
-            value={form.category_id}
-            onChange={onChange}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-          >
-            <option value="">Select a category</option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
-          </select>
+      {/* Metadata Panel */}
+      <div className="rounded-xl border border-border-main bg-card p-5 shadow-sm">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div>
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted">Category</label>
+            <select
+              name="category_id"
+              value={form.category_id}
+              onChange={onChange}
+              className="w-full rounded-lg border border-input-border bg-input-bg px-3 py-2 text-sm text-foreground focus:border-indigo-500 dark:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            >
+              <option value="">Select a category</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="sm:col-span-2 lg:col-span-2">
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted">Title *</label>
+            <input
+              name="title"
+              value={form.title}
+              onChange={onChange}
+              className="w-full rounded-lg border border-input-border bg-input-bg px-3 py-2 text-sm text-foreground focus:border-indigo-500 dark:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              placeholder="Enter krithi title"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted">
+              <Youtube className="mr-1 inline h-3.5 w-3.5" />
+              YouTube URL
+            </label>
+            <input
+              name="youtube_url"
+              value={form.youtube_url}
+              onChange={onChange}
+              className="w-full rounded-lg border border-input-border bg-input-bg px-3 py-2 text-sm text-foreground focus:border-indigo-500 dark:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              placeholder="https://youtube.com/..."
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Body Editor Panel */}
+      <div className="rounded-xl border border-border-main bg-card shadow-sm">
+        {/* Editor Toolbar */}
+        <div className="flex items-center justify-between border-b border-border-light px-4 py-2.5">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5 text-sm font-medium text-foreground">
+              <Type className="h-4 w-4 text-muted" />
+              Body
+            </div>
+            <div className="hidden items-center gap-3 text-xs text-muted sm:flex">
+              <span>{stats.lines} {stats.lines === 1 ? "line" : "lines"}</span>
+              <span className="text-gray-200 dark:text-gray-700">|</span>
+              <span>{stats.words} {stats.words === 1 ? "word" : "words"}</span>
+              <span className="text-gray-200 dark:text-gray-700">|</span>
+              <span>{stats.chars} chars</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setExpanded(!expanded);
+                setTimeout(() => textareaRef.current?.focus(), 100);
+              }}
+              className="rounded-md p-1.5 text-muted transition hover:bg-surface-hover hover:text-gray-600 dark:text-gray-400"
+              title={expanded ? "Exit fullscreen (Esc)" : "Fullscreen editor"}
+            >
+              {expanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+            </button>
+          </div>
         </div>
 
-        {/* Title */}
-        <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">Title *</label>
-          <input
-            name="title"
-            value={form.title}
-            onChange={onChange}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-            placeholder="Enter krithi title"
-          />
-        </div>
-
-        {/* Body / Description */}
-        <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">Body</label>
+        {/* Editor Area */}
+        <div className="relative">
           <textarea
+            ref={textareaRef}
             name="description"
             value={form.description}
             onChange={onChange}
-            rows={10}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-            placeholder="Enter the krithi text..."
+            onKeyDown={(e) => {
+              handleTabKey(e);
+              if (e.key === "Escape" && expanded) setExpanded(false);
+            }}
+            className={`w-full resize-none border-0 bg-transparent px-5 py-4 font-mono text-sm leading-relaxed text-foreground placeholder-muted focus:outline-none focus:ring-0 ${
+              expanded ? "min-h-[calc(100vh-320px)]" : "min-h-[480px]"
+            }`}
+            placeholder={"Start writing the krithi body here...\n\nTip: Use Ctrl+S to save, Ctrl+Shift+S to publish.\nTab key inserts spaces. Click the expand icon for fullscreen."}
+            spellCheck={false}
           />
         </div>
 
-        {/* YouTube URL */}
-        <div>
-          <label className="mb-1 block text-sm font-medium text-gray-700">YouTube URL</label>
-          <input
-            name="youtube_url"
-            value={form.youtube_url}
-            onChange={onChange}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-            placeholder="https://youtube.com/..."
-          />
-        </div>
-
-        {/* Status (only for editing) */}
-        {!isNew && (
-          <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700">Status</label>
-            <select
-              name="status"
-              value={form.status}
-              onChange={onChange}
-              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-            >
-              <option value="draft">Draft</option>
-              <option value="published">Published</option>
-            </select>
+        {/* Editor Footer */}
+        <div className="flex items-center justify-between border-t border-border-light px-4 py-2">
+          <div className="flex items-center gap-1.5 text-xs text-muted">
+            <AlignLeft className="h-3.5 w-3.5" />
+            <span>Plain text</span>
+            <span className="text-gray-200 dark:text-gray-700">·</span>
+            <span>Tab inserts spaces</span>
+            <span className="text-gray-200 dark:text-gray-700">·</span>
+            <span>Ctrl+S save</span>
           </div>
-        )}
+          {!isNew && (
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted">Status:</span>
+              <select
+                name="status"
+                value={form.status}
+                onChange={onChange}
+                className="rounded-md border border-border-main bg-surface-hover px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 focus:border-indigo-400 dark:border-indigo-500 dark:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-400"
+              >
+                <option value="draft">Draft</option>
+                <option value="published">Published</option>
+              </select>
+            </div>
+          )}
+        </div>
+      </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-3 pt-2">
-          <button
-            onClick={() => handleSave(false)}
-            disabled={saving}
-            className="inline-flex items-center gap-2 rounded-lg bg-gray-800 px-4 py-2 text-sm font-medium text-white transition hover:bg-gray-900 disabled:opacity-50"
-          >
-            <Save className="h-4 w-4" />
-            {saving ? "Saving..." : "Save Draft"}
-          </button>
-          <button
-            onClick={() => handleSave(true)}
-            disabled={saving}
-            className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700 disabled:opacity-50"
-          >
-            <Globe className="h-4 w-4" />
-            {saving ? "Publishing..." : "Publish"}
-          </button>
+      {/* Sticky Action Bar */}
+      <div className="sticky bottom-0 -mx-6 border-t border-border-main bg-card/90 px-6 py-3 backdrop-blur-sm">
+        <div className="mx-auto flex max-w-4xl items-center justify-between">
+          <Link href="/krithis" className="text-sm text-muted hover:text-foreground">
+            Cancel
+          </Link>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => handleSave(false)}
+              disabled={saving}
+              className="inline-flex items-center gap-2 rounded-lg border border-input-border bg-card px-4 py-2 text-sm font-medium text-foreground transition hover:bg-surface-hover disabled:opacity-50"
+            >
+              <Save className="h-4 w-4" />
+              {saving ? "Saving..." : "Save Draft"}
+            </button>
+            <button
+              onClick={() => handleSave(true)}
+              disabled={saving}
+              className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700 disabled:opacity-50"
+            >
+              <Globe className="h-4 w-4" />
+              {saving ? "Publishing..." : "Publish"}
+            </button>
+          </div>
         </div>
       </div>
     </div>

@@ -1,8 +1,12 @@
-export { categoryService } from "./category.service";
+export { contentCategoryService } from "./category.service";
 export { krithiService } from "./krithi.service";
 export { dharmaService } from "./dharma.service";
 export { authorService } from "./author.service";
 export { guruPhotoService } from "./guru-photo.service";
 export { userService } from "./user.service";
 export { auditLogService } from "./audit-log.service";
+export { blogService } from "./blog.service";
+export { blogCategoryService } from "./blog-category.service";
+export { keerthanamService } from "./keerthanam.service";
+export { dashboardService } from "./dashboard.service";
 export type { ServiceResult } from "./base";

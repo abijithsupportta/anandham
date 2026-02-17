@@ -57,11 +57,11 @@ function Toggle({
     <button
       onClick={() => onChange(!enabled)}
       className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-        enabled ? "bg-indigo-600" : "bg-gray-200"
+        enabled ? "bg-indigo-600" : "bg-gray-200 dark:bg-gray-700"
       }`}
     >
       <span
-        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+        className={`inline-block h-4 w-4 transform rounded-full bg-card transition-transform ${
           enabled ? "translate-x-6" : "translate-x-1"
         }`}
       />
@@ -100,8 +100,8 @@ export default function SettingsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-          <p className="mt-1 text-sm text-gray-500">
+          <h1 className="text-2xl font-bold text-foreground">Settings</h1>
+          <p className="mt-1 text-sm text-muted">
             Configure platform settings and preferences
           </p>
         </div>
@@ -128,7 +128,7 @@ export default function SettingsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="border-b border-gray-200">
+      <div className="border-b border-border-main">
         <nav className="flex gap-6">
           {tabs.map((tab) => (
             <button
@@ -136,8 +136,8 @@ export default function SettingsPage() {
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-2 border-b-2 pb-3 pt-1 text-sm font-medium transition ${
                 activeTab === tab.id
-                  ? "border-indigo-600 text-indigo-600"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
+                  ? "border-indigo-600 text-indigo-600 dark:text-indigo-400"
+                  : "border-transparent text-muted hover:text-foreground"
               }`}
             >
               <tab.icon className="h-4 w-4" />
@@ -149,52 +149,52 @@ export default function SettingsPage() {
 
       {/* General Settings */}
       {activeTab === "general" && (
-        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-          <h2 className="mb-6 text-lg font-semibold text-gray-900">
+        <div className="rounded-xl border border-border-main bg-card p-6 shadow-sm">
+          <h2 className="mb-6 text-lg font-semibold text-foreground">
             General Settings
           </h2>
           <div className="space-y-6">
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
+              <label className="mb-1 block text-sm font-medium text-foreground">
                 Site Name
               </label>
               <input
                 type="text"
                 value={settings.site_name}
                 onChange={(e) => update("site_name", e.target.value)}
-                className="w-full max-w-md rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                className="w-full max-w-md rounded-lg border border-input-border bg-input-bg px-3 py-2 text-sm text-foreground focus:border-indigo-500 dark:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-500"
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
+              <label className="mb-1 block text-sm font-medium text-foreground">
                 Site Description
               </label>
               <textarea
                 value={settings.site_description}
                 onChange={(e) => update("site_description", e.target.value)}
                 rows={3}
-                className="w-full max-w-md rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                className="w-full max-w-md rounded-lg border border-input-border bg-input-bg px-3 py-2 text-sm text-foreground focus:border-indigo-500 dark:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-500"
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
+              <label className="mb-1 block text-sm font-medium text-foreground">
                 Support Email
               </label>
               <input
                 type="email"
                 value={settings.support_email}
                 onChange={(e) => update("support_email", e.target.value)}
-                className="w-full max-w-md rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                className="w-full max-w-md rounded-lg border border-input-border bg-input-bg px-3 py-2 text-sm text-foreground focus:border-indigo-500 dark:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-500"
               />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
+              <label className="mb-1 block text-sm font-medium text-foreground">
                 Default Language
               </label>
               <select
                 value={settings.default_language}
                 onChange={(e) => update("default_language", e.target.value as ContentLanguage)}
-                className="w-full max-w-md rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                className="w-full max-w-md rounded-lg border border-input-border bg-input-bg px-3 py-2 text-sm text-foreground focus:border-indigo-500 dark:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-500"
               >
                 <option value="ta">Tamil (தமிழ்)</option>
                 <option value="en">English</option>
@@ -204,7 +204,7 @@ export default function SettingsPage() {
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
+              <label className="mb-1 block text-sm font-medium text-foreground">
                 Content Guidelines URL
               </label>
               <input
@@ -213,17 +213,17 @@ export default function SettingsPage() {
                 onChange={(e) =>
                   update("content_guidelines_url", e.target.value)
                 }
-                className="w-full max-w-md rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                className="w-full max-w-md rounded-lg border border-input-border bg-input-bg px-3 py-2 text-sm text-foreground focus:border-indigo-500 dark:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-500"
               />
             </div>
 
             {/* Maintenance Mode */}
-            <div className="flex items-center justify-between rounded-lg border border-gray-200 p-4 max-w-md">
+            <div className="flex items-center justify-between rounded-lg border border-border-main p-4 max-w-md">
               <div>
-                <p className="text-sm font-medium text-gray-900">
+                <p className="text-sm font-medium text-foreground">
                   Maintenance Mode
                 </p>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-muted">
                   Temporarily disable the platform for users
                 </p>
               </div>
@@ -235,9 +235,9 @@ export default function SettingsPage() {
 
 
             {settings.maintenance_mode && (
-              <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 max-w-md">
+              <div className="flex items-start gap-2 rounded-lg border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 p-3 max-w-md">
                 <Info className="mt-0.5 h-4 w-4 text-amber-600 shrink-0" />
-                <p className="text-sm text-amber-700">
+                <p className="text-sm text-amber-700 dark:text-amber-400">
                   Maintenance mode is active. Users cannot access the platform.
                 </p>
               </div>
@@ -248,14 +248,14 @@ export default function SettingsPage() {
 
       {/* Content Settings */}
       {activeTab === "content" && (
-        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-          <h2 className="mb-6 text-lg font-semibold text-gray-900">
+        <div className="rounded-xl border border-border-main bg-card p-6 shadow-sm">
+          <h2 className="mb-6 text-lg font-semibold text-foreground">
             Content Settings
           </h2>
           <div className="space-y-6">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 max-w-md">
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">
+                <label className="mb-1 block text-sm font-medium text-foreground">
                   Min Krithi Length (chars)
                 </label>
                 <input
@@ -264,11 +264,11 @@ export default function SettingsPage() {
                   onChange={(e) =>
                     update("min_krithi_length", parseInt(e.target.value) || 0)
                   }
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="w-full rounded-lg border border-input-border bg-input-bg px-3 py-2 text-sm text-foreground focus:border-indigo-500 dark:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">
+                <label className="mb-1 block text-sm font-medium text-foreground">
                   Max Krithi Length (chars)
                 </label>
                 <input
@@ -277,18 +277,18 @@ export default function SettingsPage() {
                   onChange={(e) =>
                     update("max_krithi_length", parseInt(e.target.value) || 0)
                   }
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="w-full rounded-lg border border-input-border bg-input-bg px-3 py-2 text-sm text-foreground focus:border-indigo-500 dark:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                 />
               </div>
             </div>
 
             <div className="space-y-4 max-w-md">
-              <div className="flex items-center justify-between rounded-lg border border-gray-200 p-4">
+              <div className="flex items-center justify-between rounded-lg border border-border-main p-4">
                 <div>
-                  <p className="text-sm font-medium text-gray-900">
+                  <p className="text-sm font-medium text-foreground">
                     Allow Comments
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-muted">
                     Let users comment on krithis
                   </p>
                 </div>
@@ -298,12 +298,12 @@ export default function SettingsPage() {
                 />
               </div>
 
-              <div className="flex items-center justify-between rounded-lg border border-gray-200 p-4">
+              <div className="flex items-center justify-between rounded-lg border border-border-main p-4">
                 <div>
-                  <p className="text-sm font-medium text-gray-900">
+                  <p className="text-sm font-medium text-foreground">
                     Moderate Comments
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-muted">
                     Require approval before comments are visible
                   </p>
                 </div>
@@ -319,17 +319,17 @@ export default function SettingsPage() {
 
       {/* Auth & Security Settings */}
       {activeTab === "auth" && (
-        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-          <h2 className="mb-6 text-lg font-semibold text-gray-900">
+        <div className="rounded-xl border border-border-main bg-card p-6 shadow-sm">
+          <h2 className="mb-6 text-lg font-semibold text-foreground">
             Auth & Security
           </h2>
           <div className="space-y-4 max-w-md">
-            <div className="flex items-center justify-between rounded-lg border border-gray-200 p-4">
+            <div className="flex items-center justify-between rounded-lg border border-border-main p-4">
               <div>
-                <p className="text-sm font-medium text-gray-900">
+                <p className="text-sm font-medium text-foreground">
                   Allow Registration
                 </p>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-muted">
                   Allow new users to sign up
                 </p>
               </div>
@@ -339,12 +339,12 @@ export default function SettingsPage() {
               />
             </div>
 
-            <div className="flex items-center justify-between rounded-lg border border-gray-200 p-4">
+            <div className="flex items-center justify-between rounded-lg border border-border-main p-4">
               <div>
-                <p className="text-sm font-medium text-gray-900">
+                <p className="text-sm font-medium text-foreground">
                   Require Email Verification
                 </p>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-muted">
                   Users must verify email before using the platform
                 </p>
               </div>
@@ -354,12 +354,12 @@ export default function SettingsPage() {
               />
             </div>
 
-            <div className="flex items-center justify-between rounded-lg border border-gray-200 p-4">
+            <div className="flex items-center justify-between rounded-lg border border-border-main p-4">
               <div>
-                <p className="text-sm font-medium text-gray-900">
+                <p className="text-sm font-medium text-foreground">
                   Auto-Approve Authors
                 </p>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-muted">
                   Automatically approve author applications
                 </p>
               </div>
@@ -370,9 +370,9 @@ export default function SettingsPage() {
             </div>
 
             {settings.auto_approve_authors && (
-              <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
+              <div className="flex items-start gap-2 rounded-lg border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 p-3">
                 <Info className="mt-0.5 h-4 w-4 text-amber-600 shrink-0" />
-                <p className="text-sm text-amber-700">
+                <p className="text-sm text-amber-700 dark:text-amber-400">
                   Auto-approve is enabled. All author applications will be
                   approved instantly without manual review.
                 </p>
@@ -384,17 +384,17 @@ export default function SettingsPage() {
 
       {/* Notification Settings */}
       {activeTab === "notifications" && (
-        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-          <h2 className="mb-6 text-lg font-semibold text-gray-900">
+        <div className="rounded-xl border border-border-main bg-card p-6 shadow-sm">
+          <h2 className="mb-6 text-lg font-semibold text-foreground">
             Email Notifications
           </h2>
           <div className="space-y-4 max-w-md">
-            <div className="flex items-center justify-between rounded-lg border border-gray-200 p-4">
+            <div className="flex items-center justify-between rounded-lg border border-border-main p-4">
               <div>
-                <p className="text-sm font-medium text-gray-900">
+                <p className="text-sm font-medium text-foreground">
                   New Author Applications
                 </p>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-muted">
                   Get notified when a new author applies
                 </p>
               </div>
@@ -404,12 +404,12 @@ export default function SettingsPage() {
               />
             </div>
 
-            <div className="flex items-center justify-between rounded-lg border border-gray-200 p-4">
+            <div className="flex items-center justify-between rounded-lg border border-border-main p-4">
               <div>
-                <p className="text-sm font-medium text-gray-900">
+                <p className="text-sm font-medium text-foreground">
                   New Reports
                 </p>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-muted">
                   Get notified when a new report is filed
                 </p>
               </div>
@@ -419,12 +419,12 @@ export default function SettingsPage() {
               />
             </div>
 
-            <div className="flex items-center justify-between rounded-lg border border-gray-200 p-4">
+            <div className="flex items-center justify-between rounded-lg border border-border-main p-4">
               <div>
-                <p className="text-sm font-medium text-gray-900">
+                <p className="text-sm font-medium text-foreground">
                   Daily Digest
                 </p>
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-muted">
                   Receive a daily summary of platform activity
                 </p>
               </div>

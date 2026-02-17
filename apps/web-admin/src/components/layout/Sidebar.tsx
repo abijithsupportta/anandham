@@ -16,10 +16,16 @@ import {
   ScrollText,
   Users,
   Layers,
+  Newspaper,
+  List,
+  Sun,
+  Moon,
+  Music,
 } from "lucide-react";
 import { useState } from "react";
 import Image from "next/image";
 import { useAuth } from "@/components/providers/auth-provider";
+import { useTheme } from "@/components/providers/theme-provider";
 
 interface NavItem {
   name: string;
@@ -46,9 +52,18 @@ const sidebarEntries: SidebarEntry[] = [
     icon: Layers,
     children: [
       { name: "Guru Krithis", href: "/krithis", icon: BookOpen },
+      { name: "Guru Keerthanams", href: "/keerthanams", icon: Music },
       { name: "Guru Dharmas", href: "/dharmas", icon: ScrollText },
       { name: "Guru Photos", href: "/guru-photos", icon: ImageIcon },
-      { name: "Categories", href: "/categories", icon: FolderTree },
+      { name: "Content Categories", href: "/content-categories", icon: FolderTree },
+    ],
+  },
+  {
+    label: "Blog",
+    icon: Newspaper,
+    children: [
+      { name: "Blog Posts", href: "/blogs", icon: List },
+      { name: "Blog Categories", href: "/blogs/categories", icon: FolderTree },
     ],
   },
   { name: "User Management", href: "/users", icon: Users },
@@ -59,6 +74,7 @@ const sidebarEntries: SidebarEntry[] = [
 export default function Sidebar() {
   const pathname = usePathname();
   const { user, signOut } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const [collapsed, setCollapsed] = useState(false);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
     "Content Management": true,
@@ -89,14 +105,14 @@ export default function Sidebar() {
           indent && !collapsed ? "ml-4" : ""
         } ${
           active
-            ? "bg-indigo-50 text-indigo-700"
-            : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+            ? "bg-accent-subtle text-indigo-400 dark:text-indigo-300"
+            : "text-gray-600 hover:bg-surface-hover hover:text-foreground dark:text-gray-400 dark:hover:text-gray-200"
         }`}
         title={collapsed ? item.name : undefined}
       >
         <item.icon
           className={`h-5 w-5 shrink-0 ${
-            active ? "text-indigo-600" : "text-gray-400"
+            active ? "text-indigo-500 dark:text-indigo-400" : "text-gray-400 dark:text-gray-500"
           }`}
         />
         {!collapsed && <span>{item.name}</span>}
@@ -109,38 +125,38 @@ export default function Sidebar() {
       {/* Mobile toggle */}
       <button
         onClick={() => setCollapsed(!collapsed)}
-        className="fixed left-4 top-4 z-50 rounded-lg border border-gray-200 bg-white p-2 shadow-sm lg:hidden"
+        className="fixed left-4 top-4 z-50 rounded-lg border border-border-main bg-surface p-2 shadow-sm lg:hidden"
       >
-        <Menu className="h-5 w-5 text-gray-600" />
+        <Menu className="h-5 w-5 text-foreground" />
       </button>
 
       {/* Overlay for mobile */}
       {!collapsed && (
         <div
-          className="fixed inset-0 z-30 bg-black/20 lg:hidden"
+          className="fixed inset-0 z-30 bg-black/40 lg:hidden"
           onClick={() => setCollapsed(true)}
         />
       )}
 
       {/* Sidebar */}
       <aside
-        className={`fixed inset-y-0 left-0 z-40 flex flex-col border-r border-gray-200 bg-white transition-all duration-300 ${
+        className={`fixed inset-y-0 left-0 z-40 flex flex-col border-r border-border-main bg-sidebar transition-all duration-300 ${
           collapsed ? "-translate-x-full lg:translate-x-0 lg:w-20" : "w-64"
         }`}
       >
         {/* Header */}
-        <div className="flex h-16 items-center justify-between border-b border-gray-100 px-4">
+        <div className="flex h-16 items-center justify-between border-b border-border-light px-4">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-600 overflow-hidden">
-              <Image src="/web-logo.png" alt="Anandham" width={36} height={36} className="h-full w-full object-cover" />
+              <Image src="/web-logo.png" alt="Anandham" width={36} height={36} className="h-full w-full object-cover" priority />
             </div>
             {!collapsed && (
-              <span className="text-lg font-bold text-gray-900">Anandham</span>
+              <span className="text-lg font-bold text-foreground">Anandham</span>
             )}
           </div>
           <button
             onClick={() => setCollapsed(!collapsed)}
-            className="hidden rounded-lg p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600 lg:block"
+            className="hidden rounded-lg p-1.5 text-muted hover:bg-surface-hover hover:text-foreground lg:block"
           >
             <ChevronLeft
               className={`h-4 w-4 transition-transform ${
@@ -157,12 +173,26 @@ export default function Sidebar() {
               const groupActive = isGroupActive(entry);
               const groupOpen = openGroups[entry.label] ?? false;
 
-              // When sidebar is collapsed, just show the icon
               if (collapsed) {
+                // In collapsed mode show just the group icon linking to its first child
+                const firstChild = entry.children[0];
                 return (
-                  <div key={entry.label} className="space-y-1">
-                    {entry.children.map((child) => renderLink(child))}
-                  </div>
+                  <Link
+                    key={entry.label}
+                    href={firstChild.href}
+                    className={`flex items-center justify-center rounded-lg p-2 transition-colors ${
+                      groupActive
+                        ? "bg-accent-subtle text-indigo-400 dark:text-indigo-300"
+                        : "text-gray-600 hover:bg-surface-hover hover:text-foreground dark:text-gray-400 dark:hover:text-gray-200"
+                    }`}
+                    title={entry.label}
+                  >
+                    <entry.icon
+                      className={`h-5 w-5 shrink-0 ${
+                        groupActive ? "text-indigo-500 dark:text-indigo-400" : "text-gray-400 dark:text-gray-500"
+                      }`}
+                    />
+                  </Link>
                 );
               }
 
@@ -172,18 +202,18 @@ export default function Sidebar() {
                     onClick={() => toggleGroup(entry.label)}
                     className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                       groupActive
-                        ? "text-indigo-700"
-                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                        ? "text-indigo-400 dark:text-indigo-300"
+                        : "text-gray-600 hover:bg-surface-hover hover:text-foreground dark:text-gray-400 dark:hover:text-gray-200"
                     }`}
                   >
                     <entry.icon
                       className={`h-5 w-5 shrink-0 ${
-                        groupActive ? "text-indigo-600" : "text-gray-400"
+                        groupActive ? "text-indigo-500 dark:text-indigo-400" : "text-gray-400 dark:text-gray-500"
                       }`}
                     />
                     <span className="flex-1 text-left">{entry.label}</span>
                     <ChevronDown
-                      className={`h-4 w-4 text-gray-400 transition-transform ${
+                      className={`h-4 w-4 text-muted transition-transform ${
                         groupOpen ? "rotate-180" : ""
                       }`}
                     />
@@ -201,22 +231,36 @@ export default function Sidebar() {
           })}
         </nav>
 
-        {/* User / Logout */}
-        <div className="border-t border-gray-100 p-3">
+        {/* Theme Toggle + User / Logout */}
+        <div className="border-t border-border-light p-3">
+          {/* Theme toggle */}
+          <button
+            onClick={toggleTheme}
+            className="mb-2 flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted transition-colors hover:bg-surface-hover hover:text-foreground"
+            title={collapsed ? (theme === "dark" ? "Light mode" : "Dark mode") : undefined}
+          >
+            {theme === "dark" ? (
+              <Sun className="h-5 w-5 shrink-0 text-amber-400" />
+            ) : (
+              <Moon className="h-5 w-5 shrink-0 text-gray-400" />
+            )}
+            {!collapsed && <span>{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>}
+          </button>
+
           {!collapsed && user && (
-            <div className="mb-2 rounded-lg bg-gray-50 px-3 py-2">
-              <p className="truncate text-sm font-medium text-gray-900">
+            <div className="mb-2 rounded-lg bg-surface-hover px-3 py-2">
+              <p className="truncate text-sm font-medium text-foreground">
                 {user.email}
               </p>
-              <p className="text-xs text-gray-500">Administrator</p>
+              <p className="text-xs text-muted">Administrator</p>
             </div>
           )}
           <button
             onClick={signOut}
-            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-gray-600 transition-colors hover:bg-red-50 hover:text-red-700"
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-muted transition-colors hover:bg-red-500/10 hover:text-red-400"
             title={collapsed ? "Sign out" : undefined}
           >
-            <LogOut className="h-5 w-5 shrink-0 text-gray-400" />
+            <LogOut className="h-5 w-5 shrink-0 text-gray-400 dark:text-gray-500" />
             {!collapsed && <span>Sign out</span>}
           </button>
         </div>
