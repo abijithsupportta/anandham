@@ -3,6 +3,274 @@
 
 Last updated: 2026-02-17
 
+## Executive Summary
+
+This document is an authoritative, in-depth technical and operational guide for the Anandham `web-admin` application. It is written to the standards expected from a senior engineering lead, intended for stakeholders including developers, SREs, product owners, and security reviewers. The goal is to capture the current implementation in detail, reasoning behind architectural choices, operational guidance, developer workflows, data governance, security rules, and an actionable roadmap.
+
+The document is intentionally verbose and prescriptive — where decisions have been made, the rationale and alternatives are recorded; where work remains, specific next steps and acceptance criteria are proposed.
+
+---
+
+## How this document is organized
+
+- Section A: Architecture & Design — high-level architecture, module boundaries, key abstractions
+- Section B: Data Model & Migrations — complete schema notes, migrations strategy, RLS patterns
+- Section C: Security & Auth — Supabase integration, session handling, middleware contract
+- Section D: Feature Catalogue & User Flows — exhaustive per-module flows, pages, states, failure modes
+- Section E: Developer Experience (DX) — repo layout, local dev, Turbopack caveats, tooling
+- Section F: CI/CD, Deployment & Operations — pipelines, migration orchestration, rollback
+- Section G: Observability & Monitoring — metrics, logs, alerts, audit review
+- Section H: Testing & QA — unit, integration, E2E, data seeding strategies
+- Section I: Troubleshooting & Known Issues — problems, diagnostics, mitigations
+- Section J: Roadmap & Backlog — prioritized work, milestones, owner recommendations
+- Appendices: code references, commands, contact list, glossary
+
+Each section contains prescriptive recommendations, concrete commands, and code pointers to accelerate onboarding and audits.
+
+---
+
+## Section A — Architecture & Design
+
+1. High-level architecture
+
+The `web-admin` is a server-rendered React application using Next.js App Router. It is built inside a monorepo that also includes other consumer web apps and Flutter mobile apps. Core responsibilities for `web-admin` include content authoring, moderation, publishing workflows, media management, user/author management, and operational dashboards.
+
+Architecture diagram (textual):
+
+- User (browser) → Next.js App Router (Server & Client components) → Supabase (Postgres + Auth + Storage) / Cloudflare R2 (object storage for media) → CDN for public assets
+
+Key runtime zones:
+
+- Browser: Client components, editor, uploads (via secure signed requests)
+- Server (Next.js): server components, APIs (/api/*), and middleware. Responsible for rendering, server-side data aggregation, and coordination with Supabase.
+- Database: Supabase Postgres with RLS policies, migrations, and triggers (audit logs)
+- Storage: Cloudflare R2 for media assets (uploads proxied through server API to keep credentials off the browser)
+
+Design principles:
+
+- Single source of truth for content in Postgres. Media stored as URLs referencing R2.
+- Keep business logic in `services/*` files so pages remain thin and focused on rendering.
+- Prefer Server Components for data fetching when rendering consistent list and stat pages; use Client Components for interactive forms and editors.
+- Use RLS as the primary authorization enforcement mechanism — the server enforces additional checks for sensitive paths.
+
+2. Module boundaries and directory mapping
+
+- `src/app/` → Pages and nested layouts. App Router grouping used for `(dashboard)` layout.
+- `src/components/` → Reusable UI building blocks (sidebar, header, modal, form controls).
+- `src/services/` → Data access and aggregation logic that talks directly to Supabase client.
+- `src/lib/` → Utilities, constants, and small wrappers (e.g., supabase client factory for SSR).
+
+3. Data flow and contracts
+
+- All writes (create/update/delete) go through service layer functions that return typed results and structured errors.
+- For each critical action, the service should emit an `audit_logs` record. This is enforced via DB triggers where possible and via service-level calls for external side effects.
+
+4. Component patterns
+
+- `Server Component` usage:
+   - Dashboard aggregation (`dashboard.service.ts`) — server-side to avoid redundant client calls.
+   - List pages where SEO or pre-rendering is beneficial.
+- `Client Component` usage:
+   - Rich text editor, drag-and-drop media uploader, image preview, form interactions.
+
+5. UI/UX decisions
+
+- Navigation progress + Suspense skeletons to mask network latency and improve perceived performance.
+- Use consistent design tokens from `packages/ui` to maintain brand consistency across web and mobile.
+
+---
+
+## Section B — Data Model & Migrations (detailed)
+
+This section describes the canonical database schema, migration practices, and rules. Where possible, sample SQL fragments and migration snippets are included to illustrate patterns you should replicate.
+
+1. Core tables and columns
+
+- `krithis` (primary content table)
+   - id: UUID PRIMARY KEY DEFAULT gen_random_uuid()
+   - title: TEXT NOT NULL
+   - slug: TEXT UNIQUE
+   - content: TEXT (or JSONB rich representation)
+   - author_name: TEXT
+   - status: TEXT CHECK (status IN ('draft','published','archived')) DEFAULT 'draft'
+   - cover_images: TEXT[] (list of R2 URLs)
+   - created_at: TIMESTAMPTZ DEFAULT now()
+   - updated_at: TIMESTAMPTZ DEFAULT now()
+
+Notes:
+- Use `pgcrypto` or `uuid-ossp` for UUID generation depending on Supabase runtime.
+- Consider adding a lightweight `version` integer to support optimistic concurrency control in the future.
+
+- `keerthanams`
+   - Same base shape as `krithis` but with `lyrics` column and a junction table `keerthanam_categories(keerthanam_id, category_id)`.
+
+- `dharmas`, `blogs`, `guru_photos`, `authors`, `content_categories`, `audit_logs` — as previously summarized in the top-level document.
+
+2. Indexing strategy
+
+- Add indexes on frequently queried columns: `status`, `created_at`, `updated_at`, `author_name`, `slug`.
+- For tag/category joins, use a composite index on junction tables for fast lookups: `(category_id, keerthanam_id)` and `(keerthanam_id, category_id)` as necessary.
+
+3. Migrations best-practices
+
+- Always make migrations idempotent. Use `DROP IF EXISTS` before `CREATE` for policies/triggers and wrap schema-changing operations in `DO $$ BEGIN ... END $$` to detect and adapt to existing columns.
+- Keep migrations small and focused. Group logically-related changes into the same migration when they are atomic.
+- Test migrations locally against a snapshot of production schema in a staging environment.
+
+Example migration snippet for idempotency (policy):
+
+```sql
+-- Drop if exists to ensure safe re-run
+DROP POLICY IF EXISTS select_published ON public.krithis;
+
+CREATE POLICY select_published ON public.krithis
+   FOR SELECT
+   USING (status = 'published' OR auth.role() = 'admin');
+```
+
+4. RLS patterns and common policy templates
+
+- Read policy for public content:
+
+```sql
+CREATE POLICY "public_read_published" ON public.krithis
+   FOR SELECT
+   USING (status = 'published');
+```
+
+- Author-only write policy (update their own drafts):
+
+```sql
+CREATE POLICY "author_update_own" ON public.krithis
+   FOR UPDATE
+   USING (auth.role() = 'author' AND author_name = current_setting('request.jwt.claims.email', true));
+```
+
+Notes about claims: Supabase makes JWT claims available to RLS via `current_setting('request.jwt.claims.*')` depending on configuration. Test these thoroughly.
+
+5. Audit logging and triggers
+
+- Audit logs are created by either DB triggers or service-layer calls. Recommended pattern:
+   - Add a `audit_logs` table with a JSON `meta` column.
+   - Create triggers that fire on `INSERT`, `UPDATE`, `DELETE` for content tables to append normalized audit entries.
+
+Example trigger function (simplified):
+
+```sql
+CREATE FUNCTION public.log_audit() RETURNS trigger AS $$
+BEGIN
+   INSERT INTO public.audit_logs (user_id, action, table_name, record_id, meta, created_at)
+   VALUES (current_setting('request.jwt.claims.sub', true), TG_OP, TG_TABLE_NAME, NEW.id::text, row_to_json(NEW), now());
+   RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+```
+
+---
+
+## Section C — Security & Authentication (deep dive)
+
+This section focuses on the security posture, operational expectations, and recommendations for improving hardening over time.
+
+1. Supabase Auth integration
+
+- Authentication: Supabase Auth manages user sign-in, session cookies, and JWT issuance. Use `createServerClient` in server components to read and manipulate sessions securely.
+- Session handling: For middleware routing checks, `supabase.auth.getSession()` is used to read cookie session without an external network call. Important: this returns data read from cookies and is not verified with Supabase.
+
+Recommendation:
+- Use `getSession()` only for routing/UX gating. For authorization-critical flows or to assert identity, call `getUser()` server-side or verify JWTs.
+
+2. Roles & permissions design
+
+- Role mapping:
+   - `super_admin` — single-owner email; full rights
+   - `admin` — content management and user management
+   - `author` — create/manage their own content
+   - `authenticated` — read access to published content
+
+- Implement the principle of least privilege: RLS policies should default to deny.
+
+3. Secret management
+
+- Environment variables (Supabase URL/anon key, service role key, Cloudflare R2 credentials) should be stored in your hosting provider's secrets management (Vercel env vars, GitHub Actions secrets, or HashiCorp Vault). Never commit these to the repo.
+
+4. Protection against common threats
+
+- XSS: sanitize any HTML inserted into content fields on display. Prefer storing content as structured blocks (e.g., ProseMirror/JSON) and sanitize when rendering.
+- CSRF: Next.js API routes with Supabase server client using cookies are generally protected; ensure CORS policies and same-site cookie flags are set.
+- Rate limiting: protect `/api/upload` endpoints from abuse with per-IP throttling or signed upload tokens.
+
+5. Incident response & auditability
+
+- Audit logs must be immutable and accessible to admins. Retain logs for a suitable retention period (e.g., 90 days) and export to object storage or SIEM if required.
+
+---
+
+## Section D — Feature Catalogue & User Flows (exhaustive)
+
+This section expands on the earlier User Flows with deeper behavioral descriptions, API endpoints used, DB tables affected, and sample success/failure payloads. Each module includes:
+- Primary pages and routes
+- Service calls and APIs
+- DB write/read side-effects
+- UX states (loading, success, error)
+- Acceptance criteria for QA
+
+We cover each module in alphabetical order for easy lookup.
+
+Module: `Authors`
+
+- Routes:
+   - `GET /authors` — list (server-side rendered)
+   - `GET /authors/[id]` — detail
+   - `POST /api/authors` — create
+   - `PUT /api/authors/[id]` — update
+   - `DELETE /api/authors/[id]` — delete (soft-delete recommended)
+
+- UI pages:
+   - `/authors` — table with filters (verified, has posts, email)
+   - `/authors/new` and `/authors/[id]` — create/edit forms
+
+- Example service flow (create author):
+   1. User fills form with `name`, `email`, `bio`, optional `photo`.
+   2. If photo uploaded: `/api/upload` used to store photo in R2; response URL attached to payload.
+   3. Client calls `POST /api/authors` with payload; server calls Supabase client to insert row.
+   4. On success, server returns 201 with created record; UI shows success toast and redirects to `/authors`.
+   5. Audit log: a row is inserted in `audit_logs` either via trigger or explicit service call.
+
+- DB effects: `authors` table receives new row; optionally `profiles` table (if separate) could be updated.
+
+- Acceptance criteria (QA):
+   - Verify unique email constraint enforced.
+   - Verify `verified` flag only changeable by `admin` or `super_admin`.
+   - Photo upload persists to R2 and is reachable via CDN.
+
+Module: `Blogs`
+
+- Routes and APIs:
+   - `GET /blogs`, `GET /blogs/[id]`
+   - `POST /api/blogs`, `PUT /api/blogs/[id]`, `DELETE /api/blogs/[id]`
+
+- Notable features:
+   - Multi-image `cover_images` stored in `cover_images TEXT[]`.
+   - `youtube_url` field that is optional; when present, frontend displays an embed preview in editor.
+   - Rich-text editing stored as sanitized HTML or structured JSON.
+
+- Sample payload (create):
+
+```json
+{
+   "title": "A devotional post",
+   "content": "<p>...sanitized html...</p>",
+   "cover_images": ["https://cdn.../img1.jpg"],
+   "youtube_url": "https://www.youtube.com/watch?v=...",
+   "author_name": "Swami XYZ",
+   "status": "draft"
+}
+```
+
+- Business rules:
+   - `title` required; `content` required for publish.
+
 ## Purpose
 This document is a single-source project reference for the Anandham `web-admin` application. It captures architecture, the tech stack, content models, auth & security rules, user flows, developer setup, deployment guidance, troubleshooting, and the recommended roadmap for future work. Treat this as the canonical admin handbook for developers, maintainers, and operators.
 
