@@ -1,0 +1,39 @@
+{
+  "name": "anandham",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Anandham Monorepo - User, Author & Admin Apps (Flutter + Next.js)",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "clean": "turbo run clean",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,css,md}\"",
+    "dev:web-user": "turbo run dev --filter=@anandham/web-user",
+    "dev:web-author": "turbo run dev --filter=@anandham/web-author",
+    "dev:web-admin": "turbo run dev --filter=@anandham/web-admin",
+    "build:web-user": "turbo run build --filter=@anandham/web-user",
+    "build:web-author": "turbo run build --filter=@anandham/web-author",
+    "build:web-admin": "turbo run build --filter=@anandham/web-admin"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/abijithsupportta/anandham.git"
+  },
+  "keywords": ["monorepo", "turborepo", "nextjs", "flutter"],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/abijithsupportta/anandham/issues"
+  },
+  "homepage": "https://github.com/abijithsupportta/anandham#readme",
+  "packageManager": "npm@11.6.2",
+  "devDependencies": {
+    "turbo": "^2.8.9"
+  }
+}

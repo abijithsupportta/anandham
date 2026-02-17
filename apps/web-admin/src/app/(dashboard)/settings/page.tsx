@@ -1,0 +1,447 @@
+"use client";
+
+import { useState } from "react";
+import {
+  Settings,
+  Save,
+  Globe,
+  Shield,
+  Bell,
+  Palette,
+  Database,
+  ToggleLeft,
+  ToggleRight,
+  Info,
+} from "lucide-react";
+
+interface AppSettings {
+  site_name: string;
+  site_description: string;
+  support_email: string;
+  maintenance_mode: boolean;
+  allow_registration: boolean;
+  auto_approve_authors: boolean;
+  require_email_verification: boolean;
+  max_krithi_length: number;
+  min_krithi_length: number;
+  allow_comments: boolean;
+  moderate_comments: boolean;
+  notification_email_new_author: boolean;
+  notification_email_new_report: boolean;
+  notification_email_daily_digest: boolean;
+  default_language: string;
+  content_guidelines_url: string;
+}
+
+const initialSettings: AppSettings = {
+  site_name: "",
+  site_description: "",
+  support_email: "",
+  maintenance_mode: false,
+  allow_registration: false,
+  auto_approve_authors: false,
+  require_email_verification: false,
+  max_krithi_length: 0,
+  min_krithi_length: 0,
+  allow_comments: false,
+  moderate_comments: false,
+  notification_email_new_author: false,
+  notification_email_new_report: false,
+  notification_email_daily_digest: false,
+  default_language: "",
+  content_guidelines_url: "",
+};
+
+function Toggle({
+  enabled,
+  onChange,
+}: {
+  enabled: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <button
+      onClick={() => onChange(!enabled)}
+      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+        enabled ? "bg-indigo-600" : "bg-gray-200"
+      }`}
+    >
+      <span
+        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+          enabled ? "translate-x-6" : "translate-x-1"
+        }`}
+      />
+    </button>
+  );
+}
+
+export default function SettingsPage() {
+  const [settings, setSettings] = useState<AppSettings>(initialSettings);
+  const [saved, setSaved] = useState(false);
+  const [activeTab, setActiveTab] = useState("general");
+
+  function handleSave() {
+    // TODO: Save to Supabase
+    setSaved(true);
+    setTimeout(() => setSaved(false), 3000);
+  }
+
+  function update<K extends keyof AppSettings>(
+    key: K,
+    value: AppSettings[K]
+  ) {
+    setSettings((prev) => ({ ...prev, [key]: value }));
+    setSaved(false);
+  }
+
+  const tabs = [
+    { id: "general", label: "General", icon: Globe },
+    { id: "content", label: "Content", icon: Database },
+    { id: "auth", label: "Auth & Security", icon: Shield },
+    { id: "notifications", label: "Notifications", icon: Bell },
+  ];
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Configure platform settings and preferences
+          </p>
+        </div>
+        <button
+          onClick={handleSave}
+          className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white transition ${
+            saved
+              ? "bg-green-600 hover:bg-green-700"
+              : "bg-indigo-600 hover:bg-indigo-700"
+          }`}
+        >
+          {saved ? (
+            <>
+              <Save className="h-4 w-4" />
+              Saved!
+            </>
+          ) : (
+            <>
+              <Save className="h-4 w-4" />
+              Save Changes
+            </>
+          )}
+        </button>
+      </div>
+
+      {/* Tabs */}
+      <div className="border-b border-gray-200">
+        <nav className="flex gap-6">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-2 border-b-2 pb-3 pt-1 text-sm font-medium transition ${
+                activeTab === tab.id
+                  ? "border-indigo-600 text-indigo-600"
+                  : "border-transparent text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              <tab.icon className="h-4 w-4" />
+              {tab.label}
+            </button>
+          ))}
+        </nav>
+      </div>
+
+      {/* General Settings */}
+      {activeTab === "general" && (
+        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+          <h2 className="mb-6 text-lg font-semibold text-gray-900">
+            General Settings
+          </h2>
+          <div className="space-y-6">
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">
+                Site Name
+              </label>
+              <input
+                type="text"
+                value={settings.site_name}
+                onChange={(e) => update("site_name", e.target.value)}
+                className="w-full max-w-md rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">
+                Site Description
+              </label>
+              <textarea
+                value={settings.site_description}
+                onChange={(e) => update("site_description", e.target.value)}
+                rows={3}
+                className="w-full max-w-md rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">
+                Support Email
+              </label>
+              <input
+                type="email"
+                value={settings.support_email}
+                onChange={(e) => update("support_email", e.target.value)}
+                className="w-full max-w-md rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">
+                Default Language
+              </label>
+              <select
+                value={settings.default_language}
+                onChange={(e) => update("default_language", e.target.value)}
+                className="w-full max-w-md rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              >
+                <option value="ta">Tamil (தமிழ்)</option>
+                <option value="en">English</option>
+                <option value="sa">Sanskrit (संस्कृतम्)</option>
+                <option value="ml">Malayalam (മലയാളം)</option>
+                <option value="hi">Hindi (हिन्दी)</option>
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">
+                Content Guidelines URL
+              </label>
+              <input
+                type="url"
+                value={settings.content_guidelines_url}
+                onChange={(e) =>
+                  update("content_guidelines_url", e.target.value)
+                }
+                className="w-full max-w-md rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              />
+            </div>
+
+            {/* Maintenance Mode */}
+            <div className="flex items-center justify-between rounded-lg border border-gray-200 p-4 max-w-md">
+              <div>
+                <p className="text-sm font-medium text-gray-900">
+                  Maintenance Mode
+                </p>
+                <p className="text-xs text-gray-500">
+                  Temporarily disable the platform for users
+                </p>
+              </div>
+              <Toggle
+                enabled={settings.maintenance_mode}
+                onChange={(v) => update("maintenance_mode", v)}
+              />
+            </div>
+
+
+            {settings.maintenance_mode && (
+              <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 max-w-md">
+                <Info className="mt-0.5 h-4 w-4 text-amber-600 shrink-0" />
+                <p className="text-sm text-amber-700">
+                  Maintenance mode is active. Users cannot access the platform.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Content Settings */}
+      {activeTab === "content" && (
+        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+          <h2 className="mb-6 text-lg font-semibold text-gray-900">
+            Content Settings
+          </h2>
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 max-w-md">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">
+                  Min Krithi Length (chars)
+                </label>
+                <input
+                  type="number"
+                  value={settings.min_krithi_length}
+                  onChange={(e) =>
+                    update("min_krithi_length", parseInt(e.target.value) || 0)
+                  }
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-gray-700">
+                  Max Krithi Length (chars)
+                </label>
+                <input
+                  type="number"
+                  value={settings.max_krithi_length}
+                  onChange={(e) =>
+                    update("max_krithi_length", parseInt(e.target.value) || 0)
+                  }
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-4 max-w-md">
+              <div className="flex items-center justify-between rounded-lg border border-gray-200 p-4">
+                <div>
+                  <p className="text-sm font-medium text-gray-900">
+                    Allow Comments
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Let users comment on krithis
+                  </p>
+                </div>
+                <Toggle
+                  enabled={settings.allow_comments}
+                  onChange={(v) => update("allow_comments", v)}
+                />
+              </div>
+
+              <div className="flex items-center justify-between rounded-lg border border-gray-200 p-4">
+                <div>
+                  <p className="text-sm font-medium text-gray-900">
+                    Moderate Comments
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Require approval before comments are visible
+                  </p>
+                </div>
+                <Toggle
+                  enabled={settings.moderate_comments}
+                  onChange={(v) => update("moderate_comments", v)}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Auth & Security Settings */}
+      {activeTab === "auth" && (
+        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+          <h2 className="mb-6 text-lg font-semibold text-gray-900">
+            Auth & Security
+          </h2>
+          <div className="space-y-4 max-w-md">
+            <div className="flex items-center justify-between rounded-lg border border-gray-200 p-4">
+              <div>
+                <p className="text-sm font-medium text-gray-900">
+                  Allow Registration
+                </p>
+                <p className="text-xs text-gray-500">
+                  Allow new users to sign up
+                </p>
+              </div>
+              <Toggle
+                enabled={settings.allow_registration}
+                onChange={(v) => update("allow_registration", v)}
+              />
+            </div>
+
+            <div className="flex items-center justify-between rounded-lg border border-gray-200 p-4">
+              <div>
+                <p className="text-sm font-medium text-gray-900">
+                  Require Email Verification
+                </p>
+                <p className="text-xs text-gray-500">
+                  Users must verify email before using the platform
+                </p>
+              </div>
+              <Toggle
+                enabled={settings.require_email_verification}
+                onChange={(v) => update("require_email_verification", v)}
+              />
+            </div>
+
+            <div className="flex items-center justify-between rounded-lg border border-gray-200 p-4">
+              <div>
+                <p className="text-sm font-medium text-gray-900">
+                  Auto-Approve Authors
+                </p>
+                <p className="text-xs text-gray-500">
+                  Automatically approve author applications
+                </p>
+              </div>
+              <Toggle
+                enabled={settings.auto_approve_authors}
+                onChange={(v) => update("auto_approve_authors", v)}
+              />
+            </div>
+
+            {settings.auto_approve_authors && (
+              <div className="flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
+                <Info className="mt-0.5 h-4 w-4 text-amber-600 shrink-0" />
+                <p className="text-sm text-amber-700">
+                  Auto-approve is enabled. All author applications will be
+                  approved instantly without manual review.
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Notification Settings */}
+      {activeTab === "notifications" && (
+        <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+          <h2 className="mb-6 text-lg font-semibold text-gray-900">
+            Email Notifications
+          </h2>
+          <div className="space-y-4 max-w-md">
+            <div className="flex items-center justify-between rounded-lg border border-gray-200 p-4">
+              <div>
+                <p className="text-sm font-medium text-gray-900">
+                  New Author Applications
+                </p>
+                <p className="text-xs text-gray-500">
+                  Get notified when a new author applies
+                </p>
+              </div>
+              <Toggle
+                enabled={settings.notification_email_new_author}
+                onChange={(v) => update("notification_email_new_author", v)}
+              />
+            </div>
+
+            <div className="flex items-center justify-between rounded-lg border border-gray-200 p-4">
+              <div>
+                <p className="text-sm font-medium text-gray-900">
+                  New Reports
+                </p>
+                <p className="text-xs text-gray-500">
+                  Get notified when a new report is filed
+                </p>
+              </div>
+              <Toggle
+                enabled={settings.notification_email_new_report}
+                onChange={(v) => update("notification_email_new_report", v)}
+              />
+            </div>
+
+            <div className="flex items-center justify-between rounded-lg border border-gray-200 p-4">
+              <div>
+                <p className="text-sm font-medium text-gray-900">
+                  Daily Digest
+                </p>
+                <p className="text-xs text-gray-500">
+                  Receive a daily summary of platform activity
+                </p>
+              </div>
+              <Toggle
+                enabled={settings.notification_email_daily_digest}
+                onChange={(v) => update("notification_email_daily_digest", v)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
