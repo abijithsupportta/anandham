@@ -44,11 +44,12 @@ export default function KrithiFormPage({
 
     const { data: catData } = await supabase
       .from("categories")
-      .select("*")
+      .select("*, content_type:content_types!inner(table_name)")
       .eq("is_active", true)
+      .eq("content_type.table_name", "krithis")
       .order("name");
 
-    if (catData) setCategories(catData as Category[]);
+    if (catData) setCategories(catData as unknown as Category[]);
 
     if (!isNew) {
       const { data: krithi } = await supabase

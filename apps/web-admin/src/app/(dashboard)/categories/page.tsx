@@ -8,22 +8,17 @@ import {
   Plus,
   Pencil,
   Trash2,
-  GripVertical,
   Check,
   X,
-  Palette,
-  Hash,
+  BookOpen,
   ScrollText,
   Image,
 } from "lucide-react";
 import SearchInput from "@/components/ui/search-input";
 
-
-
 interface CategoryFormData {
   content_type_id: string;
   name: string;
-  slug: string;
   description: string;
   icon: string;
   color: string;
@@ -33,11 +28,16 @@ interface CategoryFormData {
 const emptyForm: CategoryFormData = {
   content_type_id: "",
   name: "",
-  slug: "",
   description: "",
   icon: "📁",
   color: "#6366f1",
   is_active: true,
+};
+
+const sectionIcons: Record<string, React.ComponentType<{ className?: string }>> = {
+  krithis: BookOpen,
+  dharmas: ScrollText,
+  guru_photos: Image,
 };
 
 export default function CategoriesPage() {
@@ -45,11 +45,17 @@ export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [contentTypes, setContentTypes] = useState<ContentType[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [activeTab, setActiveTab] = useState<string>("all");
+  const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState<CategoryFormData>(emptyForm);
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
     const [catRes, ctRes] = await Promise.all([
-      supabase.from("categories").select("*").order("display_order"),
+      supabase.from("categories").select("*, content_type:content_types(*)").order("display_order"),
       supabase.from("content_types").select("*").eq("is_active", true).order("display_order"),
     ]);
     if (catRes.data) setCategories(catRes.data as Category[]);
@@ -61,32 +67,21 @@ export default function CategoriesPage() {
   useEffect(() => {
     loadData();
   }, [loadData]);
-  const [search, setSearch] = useState("");
-  const [contentTypeFilter, setContentTypeFilter] = useState<string>("all");
-  const [showForm, setShowForm] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState<CategoryFormData>(emptyForm);
-  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
   const filtered = categories.filter((c) => {
     const matchesSearch =
       c.name.toLowerCase().includes(search.toLowerCase()) ||
       c.description.toLowerCase().includes(search.toLowerCase());
-    const matchesType =
-      contentTypeFilter === "all" || c.content_type_id === contentTypeFilter;
-    return matchesSearch && matchesType;
+    const matchesTab =
+      activeTab === "all" || c.content_type_id === activeTab;
+    return matchesSearch && matchesTab;
   });
-
-  function getContentTypeName(id: string) {
-    return contentTypes.find((ct) => ct.id === id)?.display_name ?? id;
-  }
 
   function handleEdit(cat: Category) {
     setEditingId(cat.id);
     setForm({
       content_type_id: cat.content_type_id,
       name: cat.name,
-      slug: cat.slug,
       description: cat.description,
       icon: cat.icon,
       color: cat.color,
@@ -97,14 +92,17 @@ export default function CategoriesPage() {
 
   function handleAdd() {
     setEditingId(null);
-    setForm(emptyForm);
+    setForm({
+      ...emptyForm,
+      content_type_id: activeTab !== "all" ? activeTab : "",
+    });
     setShowForm(true);
   }
 
   async function handleSave() {
     if (!form.name.trim() || !form.content_type_id) return;
     const now = new Date().toISOString();
-    const slug = form.name.toLowerCase().replace(/\s+/g, "-");
+    const slug = form.name.toLowerCase().replace(/[^a-z0-9\s-]/g, "").replace(/\s+/g, "-");
 
     if (editingId) {
       await supabase
@@ -112,9 +110,8 @@ export default function CategoriesPage() {
         .update({ ...form, slug, updated_at: now })
         .eq("id", editingId);
     } else {
-      const display_order = categories.filter(
-        (c) => c.content_type_id === form.content_type_id
-      ).length + 1;
+      const display_order =
+        categories.filter((c) => c.content_type_id === form.content_type_id).length + 1;
       await supabase.from("categories").insert({
         ...form,
         slug,
@@ -145,6 +142,18 @@ export default function CategoriesPage() {
     loadData();
   }
 
+  function getCategoryCount(contentTypeId: string) {
+    return categories.filter((c) => c.content_type_id === contentTypeId).length;
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <p className="text-sm text-gray-400">Loading categories...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -152,7 +161,7 @@ export default function CategoriesPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Categories</h1>
           <p className="mt-1 text-sm text-gray-500">
-            Manage content categories and their ordering
+            Manage categories for each content section
           </p>
         </div>
         <button
@@ -164,27 +173,44 @@ export default function CategoriesPage() {
         </button>
       </div>
 
-      {/* Search & Filter */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <SearchInput
-          value={search}
-          onChange={setSearch}
-          placeholder="Search categories..."
-          className="sm:w-72"
-        />
-        <select
-          value={contentTypeFilter}
-          onChange={(e) => setContentTypeFilter(e.target.value)}
-          className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+      {/* Content Type Tabs */}
+      <div className="flex flex-wrap gap-2">
+        <button
+          onClick={() => setActiveTab("all")}
+          className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
+            activeTab === "all"
+              ? "bg-indigo-600 text-white"
+              : "border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+          }`}
         >
-          <option value="all">All Content Types</option>
-          {contentTypes.map((ct) => (
-            <option key={ct.id} value={ct.id}>
-              {ct.icon} {ct.display_name}
-            </option>
-          ))}
-        </select>
+          All ({categories.length})
+        </button>
+        {contentTypes.map((ct) => {
+          const Icon = sectionIcons[ct.table_name] ?? FolderTree;
+          return (
+            <button
+              key={ct.id}
+              onClick={() => setActiveTab(ct.id)}
+              className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition ${
+                activeTab === ct.id
+                  ? "bg-indigo-600 text-white"
+                  : "border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+              }`}
+            >
+              <Icon className="h-4 w-4" />
+              {ct.display_name} ({getCategoryCount(ct.id)})
+            </button>
+          );
+        })}
       </div>
+
+      {/* Search */}
+      <SearchInput
+        value={search}
+        onChange={setSearch}
+        placeholder="Search categories..."
+        className="sm:w-72"
+      />
 
       {/* Add/Edit Form */}
       {showForm && (
@@ -195,7 +221,7 @@ export default function CategoriesPage() {
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">
-                Content Type *
+                Content Section *
               </label>
               <select
                 value={form.content_type_id}
@@ -204,10 +230,10 @@ export default function CategoriesPage() {
                 }
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
               >
-                <option value="">Select content type</option>
+                <option value="">Select section</option>
                 {contentTypes.map((ct) => (
                   <option key={ct.id} value={ct.id}>
-                    {ct.icon} {ct.display_name}
+                    {ct.display_name}
                   </option>
                 ))}
               </select>
@@ -219,23 +245,19 @@ export default function CategoriesPage() {
               <input
                 type="text"
                 value={form.name}
-                onChange={(e) =>
-                  setForm({ ...form, name: e.target.value })
-                }
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                 placeholder="Category name"
               />
             </div>
-            <div>
+            <div className="sm:col-span-2">
               <label className="mb-1 block text-sm font-medium text-gray-700">
                 Description
               </label>
               <input
                 type="text"
                 value={form.description}
-                onChange={(e) =>
-                  setForm({ ...form, description: e.target.value })
-                }
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                 placeholder="Short description"
               />
@@ -247,9 +269,7 @@ export default function CategoriesPage() {
               <input
                 type="text"
                 value={form.icon}
-                onChange={(e) =>
-                  setForm({ ...form, icon: e.target.value })
-                }
+                onChange={(e) => setForm({ ...form, icon: e.target.value })}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                 placeholder="📁"
               />
@@ -262,17 +282,13 @@ export default function CategoriesPage() {
                 <input
                   type="color"
                   value={form.color}
-                  onChange={(e) =>
-                    setForm({ ...form, color: e.target.value })
-                  }
+                  onChange={(e) => setForm({ ...form, color: e.target.value })}
                   className="h-9 w-12 cursor-pointer rounded border border-gray-300"
                 />
                 <input
                   type="text"
                   value={form.color}
-                  onChange={(e) =>
-                    setForm({ ...form, color: e.target.value })
-                  }
+                  onChange={(e) => setForm({ ...form, color: e.target.value })}
                   className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
                 />
               </div>
@@ -283,9 +299,7 @@ export default function CategoriesPage() {
               <input
                 type="checkbox"
                 checked={form.is_active}
-                onChange={(e) =>
-                  setForm({ ...form, is_active: e.target.checked })
-                }
+                onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
                 className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
               />
               <span className="text-sm text-gray-700">Active</span>
@@ -316,109 +330,95 @@ export default function CategoriesPage() {
 
       {/* Categories List */}
       <div className="space-y-3">
-        {filtered.map((cat) => (
-          <div
-            key={cat.id}
-            className={`flex items-center gap-4 rounded-xl border bg-white p-4 shadow-sm transition ${
-              cat.is_active
-                ? "border-gray-200"
-                : "border-gray-100 opacity-60"
-            }`}
-          >
-            {/* Drag Handle */}
-            <GripVertical className="h-5 w-5 cursor-grab text-gray-300" />
-
-            {/* Icon + Color */}
+        {filtered.map((cat) => {
+          const ct = contentTypes.find((t) => t.id === cat.content_type_id);
+          const Icon = ct ? (sectionIcons[ct.table_name] ?? FolderTree) : FolderTree;
+          return (
             <div
-              className="flex h-10 w-10 items-center justify-center rounded-lg text-lg"
-              style={{ backgroundColor: cat.color + "20" }}
+              key={cat.id}
+              className={`flex items-center gap-4 rounded-xl border bg-white p-4 shadow-sm transition ${
+                cat.is_active ? "border-gray-200" : "border-gray-100 opacity-60"
+              }`}
             >
-              {cat.icon}
-            </div>
+              {/* Icon */}
+              <div
+                className="flex h-10 w-10 items-center justify-center rounded-lg text-lg"
+                style={{ backgroundColor: cat.color + "20" }}
+              >
+                {cat.icon}
+              </div>
 
-            {/* Info */}
-            <div className="flex-1">
-              <div className="flex items-center gap-2">
-                <h3 className="text-sm font-semibold text-gray-900">
-                  {cat.name}
-                </h3>
-                {!cat.is_active && (
-                  <span className="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-500">
-                    Inactive
-                  </span>
+              {/* Info */}
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-semibold text-gray-900">{cat.name}</h3>
+                  {!cat.is_active && (
+                    <span className="rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-500">
+                      Inactive
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500">{cat.description}</p>
+              </div>
+
+              {/* Content Type Badge */}
+              <div className="hidden sm:flex">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700">
+                  <Icon className="h-3 w-3" />
+                  {ct?.display_name ?? "Unknown"}
+                </span>
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => handleToggleActive(cat.id)}
+                  className={`rounded-lg p-2 text-sm transition ${
+                    cat.is_active
+                      ? "text-green-600 hover:bg-green-50"
+                      : "text-gray-400 hover:bg-gray-50"
+                  }`}
+                  title={cat.is_active ? "Deactivate" : "Activate"}
+                >
+                  <Check className="h-4 w-4" />
+                </button>
+                <button
+                  onClick={() => handleEdit(cat)}
+                  className="rounded-lg p-2 text-gray-400 transition hover:bg-gray-50 hover:text-indigo-600"
+                  title="Edit"
+                >
+                  <Pencil className="h-4 w-4" />
+                </button>
+                {deleteConfirm === cat.id ? (
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => handleDelete(cat.id)}
+                      className="rounded-lg p-2 text-red-600 transition hover:bg-red-50"
+                      title="Confirm delete"
+                    >
+                      <Check className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => setDeleteConfirm(null)}
+                      className="rounded-lg p-2 text-gray-400 transition hover:bg-gray-50"
+                      title="Cancel"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setDeleteConfirm(cat.id)}
+                    className="rounded-lg p-2 text-gray-400 transition hover:bg-gray-50 hover:text-red-600"
+                    title="Delete"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
                 )}
               </div>
-              <p className="text-xs text-gray-500">{cat.description}</p>
             </div>
-
-            {/* Stats */}
-            <div className="hidden items-center gap-4 sm:flex">
-              <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
-                {getContentTypeName(cat.content_type_id)}
-              </span>
-              <div className="flex items-center gap-1 text-sm text-gray-500">
-                <Hash className="h-3.5 w-3.5" />
-                <span>{cat.display_order}</span>
-              </div>
-
-              <div className="flex items-center gap-1 text-sm text-gray-500">
-                <Palette className="h-3.5 w-3.5" />
-                <div
-                  className="h-4 w-4 rounded"
-                  style={{ backgroundColor: cat.color }}
-                />
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => handleToggleActive(cat.id)}
-                className={`rounded-lg p-2 text-sm transition ${
-                  cat.is_active
-                    ? "text-green-600 hover:bg-green-50"
-                    : "text-gray-400 hover:bg-gray-50"
-                }`}
-                title={cat.is_active ? "Deactivate" : "Activate"}
-              >
-                <Check className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => handleEdit(cat)}
-                className="rounded-lg p-2 text-gray-400 transition hover:bg-gray-50 hover:text-indigo-600"
-                title="Edit"
-              >
-                <Pencil className="h-4 w-4" />
-              </button>
-              {deleteConfirm === cat.id ? (
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => handleDelete(cat.id)}
-                    className="rounded-lg p-2 text-red-600 transition hover:bg-red-50"
-                    title="Confirm delete"
-                  >
-                    <Check className="h-4 w-4" />
-                  </button>
-                  <button
-                    onClick={() => setDeleteConfirm(null)}
-                    className="rounded-lg p-2 text-gray-400 transition hover:bg-gray-50"
-                    title="Cancel"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-              ) : (
-                <button
-                  onClick={() => setDeleteConfirm(cat.id)}
-                  className="rounded-lg p-2 text-gray-400 transition hover:bg-gray-50 hover:text-red-600"
-                  title="Delete"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              )}
-            </div>
-          </div>
-        ))}
+          );
+        })}
 
         {filtered.length === 0 && (
           <div className="py-12 text-center text-sm text-gray-400">
