@@ -398,6 +398,287 @@ Sign-out behavior: middleware calls `supabase.auth.signOut()` for unauthorized u
 
 ---
 
+## Continued Section D — Feature Catalogue & User Flows (complete)
+
+Module: `Dashboard` (detailed)
+
+- APIs and server responsibilities:
+   - `GET /` (server-side) renders the dashboard layout and invokes `dashboard.service.ts` methods:
+      - `getStats()` — parallel counts across `krithis`, `dharmas`, `blogs`, `guru_photos`, `keerthanams`, `authors`, `content_categories`.
+      - `getRecentActivity(limit)` — reads `audit_logs` and joins with `authors`/`users` for display.
+      - `getDrafts(limit)` — union of drafts across content tables with type annotation for linking.
+      - `getTopCategories(limit)` — aggregation over category relationships and content tables.
+      - `getMonthlyGrowth()` — time-series aggregation for last N months.
+
+- DB tables written: dashboard reads only; user actions triggered from dashboard (like quick-create) call content services which write to the respective content table and `audit_logs`.
+
+- UI behaviors and acceptance criteria:
+   - All stat cards must reflect counts consistent with raw DB queries — tests should validate counts against test fixtures.
+   - Chart interactions should not block navigation; clicking filters should navigate to the appropriate list page preserving filters in query params.
+
+Module: `Guru Photos` (detailed)
+
+- APIs:
+   - `GET /guru-photos` — gallery listing (server-side paginated)
+   - `POST /api/guru-photos` — upload metadata (server will accept R2 URLs from `/api/upload`)
+   - `DELETE /api/guru-photos/[id]` — soft-delete record and optionally request R2 purge
+
+- DB side effects:
+   - Insert/Update triggers add audit logs.
+   - If purge requested, write a `purge_requested` flag for asynchronous worker to handle deletes from R2.
+
+Module: `Keerthanams` / `Krithis` / `Dharmas` (shared patterns)
+
+- Pagination: use cursor-based pagination via `created_at` or a stable integer `id` ordering to avoid skipping/duplicating items under concurrent writes.
+- Draft autosave: implement client-side debounce and an autosave endpoint `POST /api/autosave` that stores a timestamped draft copy; provide UI to restore autosave.
+- Publish workflow: publish should be an idempotent operation — if a second publish request arrives, it should be a no-op and return 200 with current published state.
+
+Module: `Media Upload API` (security & resilience)
+
+- Endpoint: `POST /api/upload`
+   - Must validate session or signed token.
+   - Validate `Content-Type` and file size.
+   - Generate a content-addressed name or UUID path to avoid collisions.
+   - Return the public CDN URL and internal storage key so UI can store both if needed.
+
+- Resilience:
+   - Use multipart upload when supported by R2 or chunked upload with retry.
+   - Return deterministic error codes for client handling: `413` (Payload Too Large), `415` (Unsupported Media Type), `500` (Server Error), `429` (Too Many Requests).
+
+Module: `Users` and `Admin` actions
+
+- Elevated actions (change role, deactivate) must be validated server-side with `getUser()` and re-checked against RLS. UI should require a confirmation modal for destructive actions and log the action to `audit_logs`.
+
+Cross-module acceptance tests
+
+- Create content (krithi) end-to-end test:
+   1. Sign in as `author`.
+   2. Create new krithi with title, content, and cover image.
+   3. Verify database record exists with `status = draft`.
+   4. Publish and verify `status = published` and `published_at` present.
+   5. Verify `audit_logs` contains create and publish actions.
+
+---
+
+## Section E — Developer Experience (DX) — expanded
+
+1. Coding standards and conventions
+
+- TypeScript strictness: enable `strict` in `tsconfig.json` for new modules; progressively migrate existing code.
+- Lint rules: prefer explicit `any` avoidance, consistent import ordering, and enforced docstrings for exported services.
+
+2. Branching and PR workflow
+
+- Branch naming: `feature/<short-description>`, `fix/<issue-id>`, `chore/docs-...`.
+- PR checklist (required before merge):
+   - [ ] Lint passes
+   - [ ] Typecheck passes
+   - [ ] Unit tests added/updated
+   - [ ] E2E smoke tests (if applicable) pass in CI
+   - [ ] DB migration reviewed and reversible
+   - [ ] Docs updated (`PROJECT_JOURNEY.md` or module-level README)
+
+3. Local debugging tips
+
+- Use `node --inspect` or VS Code remote debugger attached to Next.js server for server-side breakpoints.
+- Use `supabase` CLI to run local Postgres if replicating DB issues.
+
+4. Code ownership and reviews
+
+- Add `CODEOWNERS` file for critical directories: `src/services`, `supabase/migrations`, and `src/lib/supabase`.
+
+---
+
+## Section F — CI/CD, Deployment & Operations — detailed
+
+1. Example GitHub Actions workflow (skeleton)
+
+```yaml
+name: CI
+on: [pull_request, push]
+jobs:
+   test:
+      runs-on: ubuntu-latest
+      steps:
+         - uses: actions/checkout@v4
+         - name: Use Node
+            uses: actions/setup-node@v4
+            with:
+               node-version: 20
+         - run: npm install
+         - run: npm run -w apps/web-admin lint
+         - run: npm run -w apps/web-admin build --if-present
+         - run: npm test --workspaces --if-present
+
+   deploy:
+      needs: [test]
+      if: github.ref == 'refs/heads/main'
+      runs-on: ubuntu-latest
+      steps:
+         - uses: actions/checkout@v4
+         - name: Run migrations
+            env:
+               SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+               SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+            run: |
+               # Run migration script with locking
+               node tools/run-migrations.js --database $SUPABASE_URL --key $SUPABASE_SERVICE_ROLE_KEY
+         - name: Deploy to Vercel
+            uses: amondnet/vercel-action@v20
+            with:
+               vercel-token: ${{ secrets.VERCEL_TOKEN }}
+               vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+               vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+```
+
+2. Migration runner recommendations
+
+- Implement a simple lock table in Postgres:
+
+```sql
+CREATE TABLE migration_lock (locked BOOLEAN PRIMARY KEY DEFAULT true, locked_at timestamptz DEFAULT now());
+```
+
+- Runner behavior:
+   - Acquire lock with `INSERT` or `UPDATE` guarded by transaction.
+   - Apply pending migrations.
+   - Release lock on completion.
+
+3. Blue/Green deployment considerations
+
+- For database migrations that are not backward-compatible, use a staged migration: add columns first (compatible), deploy code that uses new columns optionally, then backfill, and finally drop old columns in a subsequent migration.
+
+---
+
+## Section G — Observability & Monitoring — detailed
+
+1. Logging conventions
+
+- Use structured JSON logs with fields: `timestamp`, `level`, `service`, `request_id`, `user_id`, `route`, `duration_ms`, `error`.
+- Example log line:
+
+```json
+{"timestamp":"2026-02-17T10:00:00Z","level":"error","service":"web-admin","route":"/api/blogs","user_id":"...","request_id":"...","error":"upload failed","duration_ms":123}
+```
+
+2. Metrics to collect
+
+- Business metrics: `content.created`, `content.published`, `media.uploaded`.
+- Infrastructure metrics: `request.latency`, `request.error_rate`, `db.query_time`.
+
+3. Tracing
+
+- Instrument key service calls with OpenTelemetry spans: upload flow, publish workflow, dashboard aggregation.
+
+4. Alerting
+
+- Example alerts:
+   - `avg(request.error_rate) > 5%` for 5 minutes → Slack/SMS paging
+   - `db.query_time` for `getMonthlyGrowth` > 500ms → investigate slow query or missing index
+
+---
+
+## Section H — Testing & QA — expanded
+
+1. Playwright E2E example
+
+- Sample flow: publish blog post (headless)
+
+```js
+const { test, expect } = require('@playwright/test');
+
+test('author can create and publish blog', async ({ page }) => {
+   await page.goto('/login');
+   await page.fill('input[name=email]', 'author@example.com');
+   await page.fill('input[name=password]', 'password');
+   await page.click('button[type=submit]');
+   await page.goto('/blogs/new');
+   await page.fill('input[name=title]', 'E2E test post');
+   // attach image mock
+   await page.fill('textarea[name=content]', '<p>Test body</p>');
+   await page.click('button:has-text("Publish")');
+   await expect(page.locator('.toast-success')).toBeVisible();
+});
+```
+
+2. Test data and fixtures
+
+- Provide seed scripts (`tools/seed-test-data.js`) that populate authors, categories, and sample content to create repeatable test runs.
+
+---
+
+## Section I — Troubleshooting & Runbooks (expanded)
+
+1. Runbook: Turbopack .next corruption (Windows)
+
+- Symptom: dev server panics with `.sst` or RocksDB errors, or missing `build-manifest.json`.
+
+Steps:
+   1. `CTRL+C` to stop dev server.
+ 2. Verify no other `next dev` is running in same workspace.
+ 3. Delete `.next` folder: `Remove-Item -Recurse -Force .next` (PowerShell) or `rm -rf .next` (bash).
+ 4. Restart: `npm run dev`.
+ 5. If recurring, add `.next` to antivirus exclusions and consider setting `turbopack.root` explicitly in `next.config.js` to avoid workspace root confusion.
+
+2. Runbook: Failed migration in CI
+
+Steps:
+   1. Pause deploy and capture the error logs from migration runner.
+ 2. Re-run migration in a staging environment with `--dry-run` if supported.
+ 3. If a partial migration applied, restore DB from backup snapshot and re-run after fixing migration script.
+
+3. Restore from DB backup (high level)
+
+- Create regular logical backups with `pg_dump` and store in R2 or object storage.
+- Restore steps (example):
+   - `pg_restore -h host -U user -d dbname backup.dump`
+   - Re-apply migrations that occurred after backup if needed.
+
+---
+
+## Section J — Roadmap & Backlog (expanded)
+
+1. Concrete acceptance criteria for short-term items
+
+- CI/CD migration lock: automated migration job that records `migration_run_id`, `started_at`, `completed_at`, and prevents concurrent runs; acceptance: no concurrent migration can run for 24 hours window.
+- Playwright: 80% coverage for critical flows; acceptance: CI passes an E2E smoke suite on each `main` deploy.
+
+2. Owners and timelines
+
+- Assign owners for each area (DEV, SRE, PRODUCT) and create milestones in issue tracker with clear definition-of-done.
+
+---
+
+## Appendices — commands, SQL snippets, contact
+
+- Useful SQL checks:
+
+```sql
+-- Check policies
+SELECT * FROM pg_policies WHERE schemaname='public';
+
+-- Recent audit logs
+SELECT * FROM public.audit_logs ORDER BY created_at DESC LIMIT 50;
+```
+
+- Contact recommendations (replace with real addresses):
+   - Owner / Super Admin: owner@example.com
+   - Dev Lead: devlead@example.com
+   - SRE: sre@example.com
+
+---
+
+## Final notes
+
+This document is intended to be living. Update `PROJECT_JOURNEY.md` with each major change (migrations, auth changes, storage decisions) and link module-level READMEs where detail exists. If you'd like, I will now:
+
+1. Finish generating a PDF export of this file and add it to the repo under `docs/`.
+2. Split the document into `README_DEVELOPER.md`, `README_OPERATOR.md`, and `README_PRODUCT.md` and open PR drafts for review.
+3. Render the document as a read-only admin page at `/admin/docs/project-journey` and wire a sidebar link to it.
+
+Tell me which of these next steps you want and I'll proceed.
+---
+
 ## Major Features & Services
 
 1. Dashboard
