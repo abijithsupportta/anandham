@@ -20,8 +20,6 @@ interface CategoryFormData {
   content_type_id: string;
   name: string;
   description: string;
-  icon: string;
-  color: string;
   is_active: boolean;
 }
 
@@ -29,8 +27,6 @@ const emptyForm: CategoryFormData = {
   content_type_id: "",
   name: "",
   description: "",
-  icon: "📁",
-  color: "#6366f1",
   is_active: true,
 };
 
@@ -83,8 +79,6 @@ export default function CategoriesPage() {
       content_type_id: cat.content_type_id,
       name: cat.name,
       description: cat.description,
-      icon: cat.icon,
-      color: cat.color,
       is_active: cat.is_active,
     });
     setShowForm(true);
@@ -262,37 +256,6 @@ export default function CategoriesPage() {
                 placeholder="Short description"
               />
             </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
-                Icon (emoji)
-              </label>
-              <input
-                type="text"
-                value={form.icon}
-                onChange={(e) => setForm({ ...form, icon: e.target.value })}
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                placeholder="📁"
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
-                Color
-              </label>
-              <div className="flex items-center gap-2">
-                <input
-                  type="color"
-                  value={form.color}
-                  onChange={(e) => setForm({ ...form, color: e.target.value })}
-                  className="h-9 w-12 cursor-pointer rounded border border-gray-300"
-                />
-                <input
-                  type="text"
-                  value={form.color}
-                  onChange={(e) => setForm({ ...form, color: e.target.value })}
-                  className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                />
-              </div>
-            </div>
           </div>
           <div className="mt-4 flex items-center gap-3">
             <label className="flex items-center gap-2">
@@ -340,14 +303,6 @@ export default function CategoriesPage() {
                 cat.is_active ? "border-gray-200" : "border-gray-100 opacity-60"
               }`}
             >
-              {/* Icon */}
-              <div
-                className="flex h-10 w-10 items-center justify-center rounded-lg text-lg"
-                style={{ backgroundColor: cat.color + "20" }}
-              >
-                {cat.icon}
-              </div>
-
               {/* Info */}
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
