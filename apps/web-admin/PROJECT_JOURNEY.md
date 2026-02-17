@@ -265,7 +265,6 @@ Longer-term:
 - Analytics-driven content recommendations
 
 ---
-
 ## Appendices: Important File Links
 - `apps/web-admin/src/lib/supabase/middleware.ts` — middleware auth check. ([file link](src/lib/supabase/middleware.ts#L1))
 - `apps/web-admin/src/services/dashboard.service.ts` — dashboard aggregation. ([file link](src/services/dashboard.service.ts#L1))
@@ -273,6 +272,166 @@ Longer-term:
 - `supabase/migrations/` — DB migrations folder.
 
 ---
+
+## User Flows (Module-by-Module)
+
+Last updated: 2026-02-17 — includes recent changes: dashboard uses real Supabase data, middleware uses `getSession()` for fast routing checks, skeleton loading + `NavigationProgress`, and Turbopack caveat for Windows.
+
+This section documents the user experience and expected flows, page-by-page, for the web-admin. Each flow includes entry points, pages, available actions, success states, common errors and edge scenarios.
+
+1) Authentication (Login / Session)
+    - Entry: `/login` or attempt to access any protected admin route.
+    - Pages: `/login` (login form), root redirect logic in middleware.
+    - Actions:
+       - Submit credentials (email + password) → Supabase Auth.
+       - On success: set session cookie; redirect to requested callback URL or `/`.
+       - On failure: show inline error message (invalid credentials), allow retry, show forgot-password link if available.
+    - Middleware behavior:
+       - `getSession()` reads cookie to determine if user is authenticated for routing; if no session, redirect to `/login` with `callbackUrl` param.
+       - If user is authenticated but not authorized (not `SUPER_ADMIN_EMAIL`), middleware signs out and redirects to `/login?error=unauthorized`.
+    - Edge cases:
+       - Expired session → redirect to `/login` (user sees expired/login-required message).
+       - Network error during login → show retry state and a helpful message.
+
+2) Dashboard (`/`)
+    - Entry: top-level admin landing page.
+    - Data: Live stats for `krithis`, `dharmas`, `guru_photos`, `keerthanams`, `blogs`, `authors`, `categories`; recent activity from `audit_logs`; drafts list; charts for monthly growth and top categories.
+    - Pages/components: `DashboardSkeleton` (loading), stat cards, charts, `RecentActivity` table, `Drafts` list.
+    - Actions:
+       - Click stat card → navigate to respective list (e.g., `/krithis`).
+       - Click draft item → open edit form page.
+       - Filter charts by time-range (if implemented) → re-query server-side data.
+       - Quick actions from activity (view record) → navigate to record edit or detail page.
+    - UX notes:
+       - `NavigationProgress` shows top progress during navigation.
+       - Page uses Suspense and `DashboardSkeleton` to avoid jarring spinners.
+    - Edge cases:
+       - Empty datasets → stat cards show zero and charts render empty state.
+       - Supabase query error → show a non-blocking error toast and an option to retry.
+
+3) Krithis (Content list, create, edit)
+    - Entry: `/krithis`
+    - Pages:
+       - List: `/krithis` — table with rows, pagination, filters (status, category, author).
+       - Form: `/krithis/new` (create) and `/krithis/[id]` (edit).
+    - Actions (List):
+       - Search and filtering → client sends query to services which request from Supabase.
+       - Click “New” → navigate to form with blank fields.
+       - Row actions: Edit, Duplicate, Publish/Unpublish, Delete, Bulk actions (select multiple rows to publish/delete).
+    - Actions (Form):
+       - Save as Draft → insert row with `status = draft`; create audit log entry.
+       - Publish → set `status = published`; set `published_at`; create audit log entry.
+       - Upload cover images → open media picker; files uploaded via `/api/upload` to R2; returns URLs stored in `cover_images` array.
+       - Validation: title required. On validation fail, show inline errors.
+    - Success states:
+       - On save: redirect back to list or remain on form with success toast (configurable); draft appears in drafts list.
+    - Error states:
+       - Upload failures → retry option, keep form state intact.
+       - Permissions error (RLS) → sign out or show unauthorized toast depending on context.
+    - Special scenarios:
+       - Duplicate workflow: copy all fields into new draft, allow quick publish after edit.
+       - Versioning (future): show an info banner if a published version exists.
+
+4) Keerthanams (List & Form)
+    - Entry: `/keerthanams`
+    - Pages: List and Form similar to `krithis` with addition of categories junction table.
+    - Actions:
+       - Assign categories via multi-select; backend manages `keerthanam_categories` junction table.
+       - Edit lyrics and associated metadata.
+    - Edge cases:
+       - Category deletions: if category removed, ensure junction records cleaned or preserved per migration rules.
+
+5) Dharmas (List & Form)
+    - Entry: `/dharmas`
+    - Similar to `krithis` but focused on prose/essays.
+    - Actions: draft/publish, image attachments if applicable, author attribution.
+
+6) Guru Photos (Gallery)
+    - Entry: `/guru-photos`
+    - Pages: Gallery list (grid), upload form, edit metadata.
+    - Actions:
+       - Upload photo(s) → `/api/upload` to Cloudflare R2; returned URL saved in `guru_photos`.
+       - Edit caption/alt text for accessibility.
+       - Delete photo → remove DB row and optionally purge from R2 (persistence policy to be defined).
+    - UX:
+       - Bulk uploads with progress indicators.
+    - Edge cases:
+       - Large file size → show client validation and reject; suggest guidelines.
+
+7) Blogs (List, Form, Categories)
+    - Entry: `/blogs` and `/blogs/categories`
+    - Features:
+       - Support multiple `cover_images` and `youtube_url`.
+       - Rich-text content with media embeds.
+    - Actions:
+       - Create/Save Draft/Publish as per other modules.
+       - Manage blog categories; assign to posts.
+    - Special scenarios:
+       - If `youtube_url` is present, show preview in editor and on public view.
+
+8) Authors (Management)
+    - Entry: `/authors`
+    - Pages: List, Create/Edit author profile.
+    - Actions:
+       - Mark author as `verified` → visible on public profile.
+       - Edit author bio, photo, social links.
+    - Edge cases:
+       - Email collisions — database-level unique constraint should prevent duplicates; UI should show friendly error.
+
+9) Content Categories
+    - Entry: `/content-categories`
+    - Pages: List & Form for categories
+    - Actions:
+       - Create, edit slug, activate/deactivate categories.
+       - When deactivating, ensure content referencing category continues to function (UI can show `uncategorized` fallback).
+
+10) Users (Admin user management)
+    - Entry: `/users`
+    - Pages: List of users, ability to view last login, role, and to deactivate/ban.
+    - Actions:
+       - Search by email, change role, disable account.
+    - Security:
+       - Only `super_admin`/`admin` can modify critical properties.
+
+11) Settings
+    - Entry: `/settings`
+    - Pages: App-level configuration (theme defaults, environment notes, external integrations).
+    - Actions:
+       - Update branding assets (logo used as favicon is already updated in `src/app/icon.png`).
+       - Manage `SUPER_ADMIN_EMAIL` or other env-controlled features via deployment configs.
+
+12) Audit Logs / Recent Activity
+    - Entry: accessible via Dashboard and a dedicated `/audit-log` route.
+    - Data: `audit_logs` table with action, user, table, record id, and meta JSON.
+    - Actions:
+       - Filter by user, action type, date range, and table.
+       - Click entry → navigate to record when permitted.
+    - Important: audit logs are append-only; only admins can query them.
+
+13) Media Upload Flow (common)
+    - Entry: any form that supports file upload.
+    - Flow:
+       1. User selects file(s) in editor or media picker.
+       2. Client uploads to `/api/upload` (server) which authenticates and stores in Cloudflare R2.
+       3. Server returns URL(s); client attaches URLs to record payload (e.g., `cover_images`).
+       4. On save/publish, DB row stores the URLs. Triggers may create derived thumbnails or generate audit entries.
+    - Error handling:
+       - If upload fails, client retains local file reference and offers retry. Form state should not be lost.
+
+Cross-cutting scenarios and behaviors
+- Progressive navigation & loading:
+   - Route transitions show `NavigationProgress` and Suspense skeletons so user perceives instant navigation even when server data is loading.
+- Permissions & RLS:
+   - For all create/update/delete operations, server-side RLS and API validations must ensure the acting user is authorized. Middleware gates the surface, but `getUser()` should be used in APIs where identity must be trusted.
+- Error / Retry patterns:
+   - All write actions should show optimistic UI or clear loading states and informative toasts on failures with actionable retry.
+- Bulk operations:
+   - Lists should support selecting multiple rows to perform publish/unpublish/delete with confirmation modal and a batched service call.
+
+---
+
+After adding these flows, operators and developers should be able to trace any user action end-to-end: which pages are involved, which services are called, what DB tables are written, and what audit entries are created.
+
 
 If you want this expanded further into a formal README, or split into per-audience docs (Developer, Maintainer, Operator), tell me which format you prefer and I will generate it and commit it to the repo.
 
