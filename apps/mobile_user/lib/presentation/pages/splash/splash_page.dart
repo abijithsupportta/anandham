@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:anandham_core/anandham_core.dart';
 import 'package:anandham_user/app/routes/route_names.dart';
 
@@ -9,76 +10,139 @@ class SplashPage extends StatefulWidget {
   State<SplashPage> createState() => _SplashPageState();
 }
 
-class _SplashPageState extends State<SplashPage>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
+class _SplashPageState extends State<SplashPage> {
+  bool _checkingSession = true;
 
   @override
   void initState() {
     super.initState();
+    _checkSession();
+  }
 
-    _animationController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1500),
-    );
+  Future<void> _checkSession() async {
+    await Future<void>.delayed(const Duration(milliseconds: 1800));
 
-    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeIn),
-    );
+    if (!mounted) {
+      return;
+    }
 
-    _animationController.forward();
+    if (SupabaseConfig.isAuthenticated) {
+      await Navigator.pushReplacementNamed(context, RouteNames.home);
+      return;
+    }
 
-    // Navigate to home after splash duration
-    Future.delayed(const Duration(seconds: 3), () {
-      if (mounted) {
-        Navigator.pushReplacementNamed(context, RouteNames.home);
-      }
+    setState(() {
+      _checkingSession = false;
     });
   }
 
   @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
+    if (_checkingSession) {
+      return Scaffold(
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Theme.of(context).colorScheme.surface,
+                Theme.of(context).scaffoldBackgroundColor,
+              ],
+            ),
+          ),
+          child: const Center(child: CircularProgressIndicator()),
+        ),
+      );
+    }
+
     return Scaffold(
       body: Container(
-        width: double.infinity,
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Theme.of(context).colorScheme.primary,
-              Theme.of(context).colorScheme.primaryContainer,
+              Theme.of(context).colorScheme.surface,
+              Theme.of(context).scaffoldBackgroundColor,
             ],
           ),
         ),
-        child: FadeTransition(
-          opacity: _fadeAnimation,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Image.asset(AppConstants.logo, width: 120, height: 120),
-              const SizedBox(height: 24),
-              Text(
-                'Anandham',
-                style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                  color: Theme.of(context).colorScheme.onPrimary,
-                  fontWeight: FontWeight.bold,
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Spacer(),
+                Center(
+                  child: Container(
+                    width: 138,
+                    height: 138,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(28),
+                      color: Theme.of(context).colorScheme.surface,
+                      border: Border.all(color: Theme.of(context).dividerColor),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.08),
+                          blurRadius: 24,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(14),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(18),
+                        child: Image.asset(
+                          'assets/images/guru.png',
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => Icon(
+                            Icons.self_improvement,
+                            size: 58,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 48),
-              CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  Theme.of(context).colorScheme.onPrimary,
+                const SizedBox(height: 26),
+                Text(
+                  'ANANDHAM',
+                  textAlign: TextAlign.center,
+                  style: GoogleFonts.sourceSerif4(
+                    textStyle: Theme.of(context).textTheme.headlineLarge,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.1,
+                    fontSize: 38,
+                    height: 1.05,
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 12),
+                Text(
+                  'A premium spiritual reading experience in Malayalam.',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyLarge,
+                ),
+                const Spacer(),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pushNamed(context, RouteNames.register);
+                  },
+                  child: const Text('Get started'),
+                ),
+                const SizedBox(height: 12),
+                OutlinedButton(
+                  onPressed: () {
+                    Navigator.pushNamed(context, RouteNames.login);
+                  },
+                  child: const Text('Sign in'),
+                ),
+                const SizedBox(height: 8),
+              ],
+            ),
           ),
         ),
       ),

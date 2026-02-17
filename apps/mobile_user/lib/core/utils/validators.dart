@@ -29,20 +29,8 @@ class Validators {
     if (value == null || value.trim().isEmpty) {
       return 'Password is required';
     }
-    if (value.length < 8) {
-      return 'Password must be at least 8 characters';
-    }
-    if (!RegExp(r'[A-Z]').hasMatch(value)) {
-      return 'Password must contain at least one uppercase letter';
-    }
-    if (!RegExp(r'[a-z]').hasMatch(value)) {
-      return 'Password must contain at least one lowercase letter';
-    }
-    if (!RegExp(r'[0-9]').hasMatch(value)) {
-      return 'Password must contain at least one number';
-    }
-    if (!RegExp(r'[!@#$%^&*(),.?":{}|<>]').hasMatch(value)) {
-      return 'Password must contain at least one special character';
+    if (value.length < 6) {
+      return 'Password must be at least 6 characters';
     }
     return null;
   }
@@ -67,6 +55,45 @@ class Validators {
     if (!phoneRegex.hasMatch(value)) {
       return 'Please enter a valid phone number';
     }
+    return null;
+  }
+
+  /// Validates full name.
+  static String? fullName(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Full name is required';
+    }
+    if (value.trim().length < 2) {
+      return 'Please enter a valid full name';
+    }
+    return null;
+  }
+
+  /// Validates local phone number (without country code).
+  static String? phoneLocal(String? value) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Phone number is required';
+    }
+    final digitsOnly = value.replaceAll(RegExp(r'\D'), '');
+    if (digitsOnly.length < 7 || digitsOnly.length > 12) {
+      return 'Enter a valid phone number';
+    }
+    return null;
+  }
+
+  /// Validates pincode/postal code.
+  static String? pincode(String? value, {required String countryCode}) {
+    if (value == null || value.trim().isEmpty) {
+      return 'Pincode / Postal code is required';
+    }
+
+    if (countryCode == '+91') {
+      final indiaPinRegex = RegExp(r'^\d{6}$');
+      if (!indiaPinRegex.hasMatch(value.trim())) {
+        return 'Indian pincode must be 6 digits';
+      }
+    }
+
     return null;
   }
 

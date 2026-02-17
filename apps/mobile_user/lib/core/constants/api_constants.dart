@@ -2,7 +2,10 @@ class ApiConstants {
   ApiConstants._();
 
   // Base URL
-  static const String baseUrl = 'https://api.anandham.com/v1';
+  static const String baseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'https://api.anandham.com/v1',
+  );
   static const String stagingBaseUrl = 'https://staging-api.anandham.com/v1';
 
   // Timeouts
@@ -18,6 +21,7 @@ class ApiConstants {
 
   // Headers
   static const String contentType = 'application/json';
+  static const String acceptHeader = 'Accept';
   static const String authorization = 'Authorization';
   static const String bearer = 'Bearer';
 }

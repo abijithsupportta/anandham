@@ -1,9 +1,18 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:anandham_core/anandham_core.dart' hide ApiClient;
 import 'package:anandham_user/core/network/api_client.dart';
 import 'package:anandham_user/core/network/network_info.dart';
+import 'package:anandham_user/data/datasources/local/local_data_source.dart';
+import 'package:anandham_user/data/repositories/auth_repository_impl.dart';
+import 'package:anandham_user/domain/repositories/auth_repository.dart';
+import 'package:anandham_user/domain/usecases/get_current_user_usecase.dart';
+import 'package:anandham_user/domain/usecases/sign_in_usecase.dart';
+import 'package:anandham_user/domain/usecases/sign_out_usecase.dart';
+import 'package:anandham_user/domain/usecases/sign_up_usecase.dart';
+import 'package:anandham_user/presentation/blocs/auth/auth_cubit.dart';
 
 /// Global service locator instance.
 final sl = GetIt.instance;
@@ -16,6 +25,7 @@ Future<void> init() async {
   final sharedPreferences = await SharedPreferences.getInstance();
   sl.registerLazySingleton(() => sharedPreferences);
   sl.registerLazySingleton(() => Connectivity());
+  sl.registerLazySingleton(() => const FlutterSecureStorage());
 
   //============================================================
   // Supabase Services (from anandham_core)
@@ -33,10 +43,9 @@ Future<void> init() async {
   //============================================================
   // Data Sources
   //============================================================
-  // Register local and remote data sources here
-  // sl.registerLazySingleton<LocalDataSource>(
-  //   () => LocalDataSourceImpl(sharedPreferences: sl()),
-  // );
+  sl.registerLazySingleton<LocalDataSource>(
+    () => LocalDataSourceImpl(secureStorage: sl()),
+  );
   // sl.registerLazySingleton<RemoteDataSource>(
   //   () => RemoteDataSourceImpl(apiClient: sl()),
   // );
@@ -44,24 +53,25 @@ Future<void> init() async {
   //============================================================
   // Repositories
   //============================================================
-  // Register repository implementations here
-  // sl.registerLazySingleton<AuthRepository>(
-  //   () => AuthRepositoryImpl(
-  //     remoteDataSource: sl(),
-  //     localDataSource: sl(),
-  //     networkInfo: sl(),
-  //   ),
-  // );
+  sl.registerLazySingleton<AuthRepository>(() => AuthRepositoryImpl());
 
   //============================================================
   // Use Cases
   //============================================================
-  // Register use cases here
-  // sl.registerLazySingleton(() => LoginUseCase(sl()));
+  sl.registerLazySingleton(() => SignInUseCase(sl()));
+  sl.registerLazySingleton(() => SignUpUseCase(sl()));
+  sl.registerLazySingleton(() => SignOutUseCase(sl()));
+  sl.registerLazySingleton(() => GetCurrentUserUseCase(sl()));
 
   //============================================================
   // BLoCs / Cubits
   //============================================================
-  // Register BLoCs here
-  // sl.registerFactory(() => AuthBloc(loginUseCase: sl()));
+  sl.registerFactory(
+    () => AuthCubit(
+      signInUseCase: sl(),
+      signUpUseCase: sl(),
+      signOutUseCase: sl(),
+      getCurrentUserUseCase: sl(),
+    ),
+  );
 }

@@ -3,28 +3,29 @@ import 'package:flutter/material.dart';
 class AppColors {
   AppColors._();
 
-  // Primary Colors
-  static const Color primary = Color(0xFF6200EE);
-  static const Color primaryLight = Color(0xFFBB86FC);
-  static const Color primaryDark = Color(0xFF3700B3);
+  // Web-admin aligned accent colors
+  static const Color primary = Color(0xFF4F46E5);
+  static const Color primaryHover = Color(0xFF4338CA);
+  static const Color primaryDark = Color(0xFF6366F1);
+  static const Color primaryDarkHover = Color(0xFF818CF8);
 
-  // Secondary Colors
-  static const Color secondary = Color(0xFF03DAC6);
-  static const Color secondaryLight = Color(0xFF66FFF9);
-  static const Color secondaryDark = Color(0xFF00A896);
-
-  // Background Colors
-  static const Color backgroundLight = Color(0xFFF5F5F5);
-  static const Color backgroundDark = Color(0xFF121212);
-
-  // Surface Colors
+  // Light mode colors
+  static const Color backgroundLight = Color(0xFFF9FAFB);
   static const Color surfaceLight = Color(0xFFFFFFFF);
-  static const Color surfaceDark = Color(0xFF1E1E1E);
+  static const Color borderLight = Color(0xFFE5E7EB);
+  static const Color borderLightSubtle = Color(0xFFF3F4F6);
+  static const Color textPrimaryLight = Color(0xFF111827);
+  static const Color textSecondaryLight = Color(0xFF6B7280);
+  static const Color accentSubtleLight = Color(0xFFEEF2FF);
 
-  // Text Colors
-  static const Color textPrimary = Color(0xFF212121);
-  static const Color textSecondary = Color(0xFF757575);
-  static const Color textHint = Color(0xFFBDBDBD);
+  // Dark mode colors
+  static const Color backgroundDark = Color(0xFF1E1E1E);
+  static const Color surfaceDark = Color(0xFF252526);
+  static const Color borderDark = Color(0xFF3E3E3E);
+  static const Color borderDarkSubtle = Color(0xFF333333);
+  static const Color textPrimaryDark = Color(0xFFE4E4E7);
+  static const Color textSecondaryDark = Color(0xFF888888);
+  static const Color accentSubtleDark = Color(0xFF312E81);
 
   // Status Colors
   static const Color success = Color(0xFF4CAF50);
@@ -33,7 +34,7 @@ class AppColors {
   static const Color info = Color(0xFF2196F3);
 
   // Neutral Colors
-  static const Color divider = Color(0xFFE0E0E0);
+  static const Color divider = borderLight;
   static const Color disabled = Color(0xFFBDBDBD);
   static const Color shadow = Color(0x1A000000);
 }

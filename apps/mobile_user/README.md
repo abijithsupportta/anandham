@@ -1,16 +1,28 @@
 # anandham_user
 
-A new Flutter project.
+Flutter app for Anandham end users.
 
-## Getting Started
+## Run with environment config
 
-This project is a starting point for a Flutter application.
+Use `dart-define` for all environment values (no hardcoded secrets):
 
-A few resources to get you started if this is your first Flutter project:
+```bash
+flutter run \
+	--dart-define=SUPABASE_URL=https://your-project.supabase.co \
+	--dart-define=SUPABASE_ANON_KEY=your_anon_key \
+	--dart-define=API_BASE_URL=https://api.anandham.com/v1
+```
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+## Authentication flow
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+- Splash checks current session.
+- If signed in, app navigates to Home shell.
+- If signed out, app navigates to Login.
+- Create Account and Login both use Supabase email/password auth.
+
+## Main app navigation
+
+- Home
+- Saved
+- Blogs
+- Profile

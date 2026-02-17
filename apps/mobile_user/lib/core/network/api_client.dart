@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import 'package:anandham_user/core/constants/api_constants.dart';
 import 'package:anandham_user/core/errors/exceptions.dart';
 
@@ -19,15 +20,23 @@ class ApiClient {
         sendTimeout: const Duration(milliseconds: ApiConstants.sendTimeout),
         headers: {
           'Content-Type': ApiConstants.contentType,
-          'Accept': ApiConstants.contentType,
+          ApiConstants.acceptHeader: ApiConstants.contentType,
         },
       ),
     );
 
-    _dio.interceptors.addAll([
-      LogInterceptor(requestBody: true, responseBody: true),
-      // Add auth interceptor, retry interceptor, etc.
-    ]);
+    if (kDebugMode) {
+      _dio.interceptors.add(
+        LogInterceptor(
+          requestBody: false,
+          responseBody: false,
+          requestHeader: true,
+          responseHeader: false,
+        ),
+      );
+    }
+
+    // Add auth interceptor, retry interceptor, etc.
   }
 
   /// Sets the authorization token for subsequent requests.

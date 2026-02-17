@@ -1,4 +1,4 @@
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 /// Abstract interface for local data operations.
 abstract class LocalDataSource {
@@ -26,45 +26,45 @@ abstract class LocalDataSource {
 
 /// Implementation of [LocalDataSource] using SharedPreferences.
 class LocalDataSourceImpl implements LocalDataSource {
-  final SharedPreferences _sharedPreferences;
+  final FlutterSecureStorage _secureStorage;
 
   static const String _tokenKey = 'auth_token';
 
-  LocalDataSourceImpl({required SharedPreferences sharedPreferences})
-    : _sharedPreferences = sharedPreferences;
+  LocalDataSourceImpl({required FlutterSecureStorage secureStorage})
+    : _secureStorage = secureStorage;
 
   @override
   Future<void> cacheToken(String token) async {
-    await _sharedPreferences.setString(_tokenKey, token);
+    await _secureStorage.write(key: _tokenKey, value: token);
   }
 
   @override
   Future<String?> getToken() async {
-    return _sharedPreferences.getString(_tokenKey);
+    return _secureStorage.read(key: _tokenKey);
   }
 
   @override
   Future<void> removeToken() async {
-    await _sharedPreferences.remove(_tokenKey);
+    await _secureStorage.delete(key: _tokenKey);
   }
 
   @override
   Future<void> cacheData(String key, String data) async {
-    await _sharedPreferences.setString(key, data);
+    await _secureStorage.write(key: key, value: data);
   }
 
   @override
   Future<String?> getCachedData(String key) async {
-    return _sharedPreferences.getString(key);
+    return _secureStorage.read(key: key);
   }
 
   @override
   Future<void> removeCachedData(String key) async {
-    await _sharedPreferences.remove(key);
+    await _secureStorage.delete(key: key);
   }
 
   @override
   Future<void> clearAll() async {
-    await _sharedPreferences.clear();
+    await _secureStorage.deleteAll();
   }
 }
