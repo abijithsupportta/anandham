@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import type { GuruPhoto, ContentStatus } from "@/types/database";
 import {
   Image as ImageIcon,
@@ -9,56 +9,26 @@ import {
   Trash2,
   Eye,
 } from "lucide-react";
+import { guruPhotoService } from "@/services";
+import { useQuery } from "@/hooks/useQuery";
+import { useToast } from "@/hooks/useToast";
 import SearchInput from "@/components/ui/search-input";
 import StatusBadge from "@/components/ui/status-badge";
 import Pagination from "@/components/ui/pagination";
-import { createClient } from "@/lib/supabase/client";
+import PageHeader from "@/components/ui/page-header";
+import LoadingState from "@/components/ui/loading-state";
+import EmptyState from "@/components/ui/empty-state";
 
 export default function GuruPhotosPage() {
-  const supabase = createClient();
-  const [photos, setPhotos] = useState<GuruPhoto[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+  const { data: photos, loading, refetch } = useQuery<GuruPhoto>(
+    () => guruPhotoService.getAll()
+  );
+
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | ContentStatus>("all");
   const [page, setPage] = useState(1);
   const perPage = 10;
-
-  const loadPhotos = useCallback(async () => {
-    setLoading(true);
-    const { data } = await supabase
-      .from("guru_photos")
-      .select("*, category:categories(*), author:authors(*)")
-      .eq("is_deleted", false)
-      .order("display_order");
-    if (data) setPhotos(data as GuruPhoto[]);
-    setLoading(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    loadPhotos();
-  }, [loadPhotos]);
-
-  async function handleDelete(id: string) {
-    await supabase
-      .from("guru_photos")
-      .update({ is_deleted: true, deleted_at: new Date().toISOString() })
-      .eq("id", id);
-    loadPhotos();
-  }
-
-  async function handleToggleStatus(id: string, current: ContentStatus) {
-    const newStatus = current === "published" ? "draft" : "published";
-    await supabase
-      .from("guru_photos")
-      .update({
-        status: newStatus,
-        published_at: newStatus === "published" ? new Date().toISOString() : null,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", id);
-    loadPhotos();
-  }
 
   const filtered = photos.filter((p) => {
     const matchesSearch =
@@ -71,30 +41,42 @@ export default function GuruPhotosPage() {
   const totalPages = Math.ceil(filtered.length / perPage);
   const paged = filtered.slice((page - 1) * perPage, page * perPage);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-24">
-        <p className="text-sm text-gray-400">Loading photos...</p>
-      </div>
-    );
+  async function handleToggleStatus(id: string, current: ContentStatus) {
+    const result = await guruPhotoService.toggleStatus(id, current);
+    if (result.error) { toast(result.error, "error"); return; }
+    toast(current === "draft" ? "Published" : "Unpublished", "success");
+    refetch();
   }
+
+  async function handleDelete(id: string) {
+    const result = await guruPhotoService.softDelete(id);
+    if (result.error) { toast(result.error, "error"); return; }
+    toast("Photo deleted", "success");
+    refetch();
+  }
+
+  if (loading) return <LoadingState message="Loading photos..." />;
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Guru Photos</h1>
-          <p className="mt-1 text-sm text-gray-500">Manage sacred guru photo gallery</p>
-        </div>
-        <button className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700">
-          <Plus className="h-4 w-4" />
-          Upload Photo
-        </button>
-      </div>
+      <PageHeader
+        title="Guru Photos"
+        subtitle="Manage sacred guru photo gallery"
+        action={
+          <button className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700">
+            <Plus className="h-4 w-4" />
+            Upload Photo
+          </button>
+        }
+      />
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <SearchInput value={search} onChange={setSearch} placeholder="Search photos..." className="sm:w-72" />
-        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as any)} className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700">
+        <select
+          value={statusFilter}
+          onChange={(e) => { setStatusFilter(e.target.value as "all" | ContentStatus); setPage(1); }}
+          className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+        >
           <option value="all">All Status</option>
           <option value="draft">Draft</option>
           <option value="published">Published</option>
@@ -142,13 +124,12 @@ export default function GuruPhotosPage() {
                 </td>
               </tr>
             ))}
+            {paged.length === 0 && <EmptyState asTableRow colSpan={5} message="No photos found" />}
           </tbody>
         </table>
       </div>
 
-      {totalPages > 1 && (
-        <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
-      )}
+      <Pagination currentPage={page} totalPages={totalPages} onPageChange={setPage} />
     </div>
   );
 }

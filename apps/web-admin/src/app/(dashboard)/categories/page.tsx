@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useCallback } from "react";
 import type { Category, ContentType } from "@/types/database";
-import { createClient } from "@/lib/supabase/client";
+import { categoryService } from "@/services";
+import { useQuery } from "@/hooks/useQuery";
+import { useToast } from "@/hooks/useToast";
 import {
   FolderTree,
   Plus,
@@ -15,6 +17,11 @@ import {
   Image,
 } from "lucide-react";
 import SearchInput from "@/components/ui/search-input";
+import PageHeader from "@/components/ui/page-header";
+import LoadingState from "@/components/ui/loading-state";
+import EmptyState from "@/components/ui/empty-state";
+
+// ── Form data type ─────────────────────────────────────────
 
 interface CategoryFormData {
   content_type_id: string;
@@ -30,48 +37,61 @@ const emptyForm: CategoryFormData = {
   is_active: true,
 };
 
+// ── Section icon mapping ───────────────────────────────────
+
 const sectionIcons: Record<string, React.ComponentType<{ className?: string }>> = {
   krithis: BookOpen,
   dharmas: ScrollText,
   guru_photos: Image,
 };
 
+// ── Page Component ─────────────────────────────────────────
+
 export default function CategoriesPage() {
-  const supabase = createClient();
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [contentTypes, setContentTypes] = useState<ContentType[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  // Data fetching via service layer
+  const {
+    data: categories,
+    loading: catLoading,
+    refetch: refetchCategories,
+  } = useQuery<Category>(() => categoryService.getAll());
+
+  const { data: contentTypes, loading: ctLoading } = useQuery<ContentType>(
+    () => categoryService.getContentTypes()
+  );
+
+  // UI state
   const [search, setSearch] = useState("");
-  const [activeTab, setActiveTab] = useState<string>("all");
+  const [activeTab, setActiveTab] = useState("all");
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<CategoryFormData>(emptyForm);
+  const [saving, setSaving] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
 
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    const [catRes, ctRes] = await Promise.all([
-      supabase.from("categories").select("*, content_type:content_types(*)").order("display_order"),
-      supabase.from("content_types").select("*").eq("is_active", true).order("display_order"),
-    ]);
-    if (catRes.data) setCategories(catRes.data as Category[]);
-    if (ctRes.data) setContentTypes(ctRes.data as ContentType[]);
-    setLoading(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const loading = catLoading || ctLoading;
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  // ── Filtering ────────────────────────────────────────────
 
   const filtered = categories.filter((c) => {
     const matchesSearch =
       c.name.toLowerCase().includes(search.toLowerCase()) ||
       c.description.toLowerCase().includes(search.toLowerCase());
-    const matchesTab =
-      activeTab === "all" || c.content_type_id === activeTab;
+    const matchesTab = activeTab === "all" || c.content_type_id === activeTab;
     return matchesSearch && matchesTab;
   });
+
+  // ── Handlers ─────────────────────────────────────────────
+
+  function handleAdd() {
+    setEditingId(null);
+    setForm({
+      ...emptyForm,
+      content_type_id: activeTab !== "all" ? activeTab : "",
+    });
+    setShowForm(true);
+  }
 
   function handleEdit(cat: Category) {
     setEditingId(cat.id);
@@ -84,88 +104,81 @@ export default function CategoriesPage() {
     setShowForm(true);
   }
 
-  function handleAdd() {
-    setEditingId(null);
-    setForm({
-      ...emptyForm,
-      content_type_id: activeTab !== "all" ? activeTab : "",
-    });
-    setShowForm(true);
-  }
-
-  async function handleSave() {
-    if (!form.name.trim() || !form.content_type_id) return;
-    const now = new Date().toISOString();
-    const slug = form.name.toLowerCase().replace(/[^a-z0-9\s-]/g, "").replace(/\s+/g, "-");
-
-    if (editingId) {
-      await supabase
-        .from("categories")
-        .update({ ...form, slug, updated_at: now })
-        .eq("id", editingId);
-    } else {
-      const display_order =
-        categories.filter((c) => c.content_type_id === form.content_type_id).length + 1;
-      await supabase.from("categories").insert({
-        ...form,
-        slug,
-        display_order,
-        created_at: now,
-        updated_at: now,
-      });
-    }
+  function handleCancel() {
     setShowForm(false);
     setEditingId(null);
     setForm(emptyForm);
-    loadData();
   }
+
+  const handleSave = useCallback(async () => {
+    if (!form.name.trim() || !form.content_type_id) {
+      toast("Please fill in all required fields", "error");
+      return;
+    }
+
+    setSaving(true);
+
+    const result = editingId
+      ? await categoryService.update(editingId, form)
+      : await categoryService.create(form);
+
+    setSaving(false);
+
+    if (result.error) {
+      toast(result.error, "error");
+      return;
+    }
+
+    toast(editingId ? "Category updated" : "Category created", "success");
+    handleCancel();
+    refetchCategories();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form, editingId, refetchCategories, toast]);
 
   async function handleDelete(id: string) {
-    await supabase.from("categories").delete().eq("id", id);
+    const result = await categoryService.delete(id);
     setDeleteConfirm(null);
-    loadData();
+    if (result.error) {
+      toast(result.error, "error");
+      return;
+    }
+    toast("Category deleted", "success");
+    refetchCategories();
   }
 
-  async function handleToggleActive(id: string) {
-    const cat = categories.find((c) => c.id === id);
-    if (!cat) return;
-    await supabase
-      .from("categories")
-      .update({ is_active: !cat.is_active, updated_at: new Date().toISOString() })
-      .eq("id", id);
-    loadData();
+  async function handleToggleActive(cat: Category) {
+    const result = await categoryService.toggleActive(cat.id, cat.is_active);
+    if (result.error) {
+      toast(result.error, "error");
+      return;
+    }
+    toast(cat.is_active ? "Category deactivated" : "Category activated", "info");
+    refetchCategories();
   }
 
   function getCategoryCount(contentTypeId: string) {
     return categories.filter((c) => c.content_type_id === contentTypeId).length;
   }
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-24">
-        <p className="text-sm text-gray-400">Loading categories...</p>
-      </div>
-    );
-  }
+  // ── Render ───────────────────────────────────────────────
+
+  if (loading) return <LoadingState message="Loading categories..." />;
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Categories</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Manage categories for each content section
-          </p>
-        </div>
-        <button
-          onClick={handleAdd}
-          className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700"
-        >
-          <Plus className="h-4 w-4" />
-          Add Category
-        </button>
-      </div>
+      <PageHeader
+        title="Categories"
+        subtitle="Manage categories for each content section"
+        action={
+          <button
+            onClick={handleAdd}
+            className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700"
+          >
+            <Plus className="h-4 w-4" />
+            Add Category
+          </button>
+        }
+      />
 
       {/* Content Type Tabs */}
       <div className="flex flex-wrap gap-2">
@@ -198,7 +211,6 @@ export default function CategoriesPage() {
         })}
       </div>
 
-      {/* Search */}
       <SearchInput
         value={search}
         onChange={setSearch}
@@ -219,9 +231,7 @@ export default function CategoriesPage() {
               </label>
               <select
                 value={form.content_type_id}
-                onChange={(e) =>
-                  setForm({ ...form, content_type_id: e.target.value })
-                }
+                onChange={(e) => setForm({ ...form, content_type_id: e.target.value })}
                 className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
               >
                 <option value="">Select section</option>
@@ -271,17 +281,14 @@ export default function CategoriesPage() {
           <div className="mt-4 flex gap-3">
             <button
               onClick={handleSave}
-              className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700"
+              disabled={saving}
+              className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700 disabled:opacity-50"
             >
               <Check className="h-4 w-4" />
-              {editingId ? "Update" : "Create"}
+              {saving ? "Saving..." : editingId ? "Update" : "Create"}
             </button>
             <button
-              onClick={() => {
-                setShowForm(false);
-                setEditingId(null);
-                setForm(emptyForm);
-              }}
+              onClick={handleCancel}
               className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
             >
               <X className="h-4 w-4" />
@@ -303,7 +310,6 @@ export default function CategoriesPage() {
                 cat.is_active ? "border-gray-200" : "border-gray-100 opacity-60"
               }`}
             >
-              {/* Info */}
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <h3 className="text-sm font-semibold text-gray-900">{cat.name}</h3>
@@ -316,7 +322,6 @@ export default function CategoriesPage() {
                 <p className="text-xs text-gray-500">{cat.description}</p>
               </div>
 
-              {/* Content Type Badge */}
               <div className="hidden sm:flex">
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-700">
                   <Icon className="h-3 w-3" />
@@ -324,10 +329,9 @@ export default function CategoriesPage() {
                 </span>
               </div>
 
-              {/* Actions */}
               <div className="flex items-center gap-1">
                 <button
-                  onClick={() => handleToggleActive(cat.id)}
+                  onClick={() => handleToggleActive(cat)}
                   className={`rounded-lg p-2 text-sm transition ${
                     cat.is_active
                       ? "text-green-600 hover:bg-green-50"
@@ -375,11 +379,7 @@ export default function CategoriesPage() {
           );
         })}
 
-        {filtered.length === 0 && (
-          <div className="py-12 text-center text-sm text-gray-400">
-            No categories found
-          </div>
-        )}
+        {filtered.length === 0 && <EmptyState message="No categories found" />}
       </div>
     </div>
   );
