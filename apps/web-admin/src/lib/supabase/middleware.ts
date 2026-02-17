@@ -25,9 +25,12 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
+  // Use getSession() instead of getUser() — reads from cookie, no network call.
+  // This makes page navigations instant instead of waiting for a Supabase round-trip.
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    data: { session },
+  } = await supabase.auth.getSession();
+  const user = session?.user ?? null;
 
   // Restrict access to the super admin email only
   const SUPER_ADMIN_EMAIL = process.env.SUPER_ADMIN_EMAIL || "info@abijithcb.com";
