@@ -68,7 +68,6 @@ const sidebarEntries: SidebarEntry[] = [
   },
   { name: "User Management", href: "/users", icon: Users },
   { name: "Authors", href: "/authors", icon: PenTool },
-  { name: "Project Journey", href: "/project-journey", icon: List },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 
