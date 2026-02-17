@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { LogIn, Eye, EyeOff, Shield } from "lucide-react";
+import { LogIn, Eye, EyeOff } from "lucide-react";
+import Image from "next/image";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -50,10 +51,10 @@ export default function LoginPage() {
     <div className="w-full max-w-md">
       {/* Logo & Header */}
       <div className="mb-8 text-center">
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-indigo-600 shadow-lg">
-          <Shield className="h-8 w-8 text-white" />
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-indigo-600 shadow-lg overflow-hidden">
+          <Image src="/web-logo.png" alt="Anandham" width={64} height={64} className="h-full w-full object-cover" priority />
         </div>
-        <h1 className="text-2xl font-bold text-gray-900">AMA Admin</h1>
+        <h1 className="text-2xl font-bold text-gray-900">Anandham Admin</h1>
         <p className="mt-1 text-sm text-gray-500">
           Sign in to manage the Anandham platform
         </p>

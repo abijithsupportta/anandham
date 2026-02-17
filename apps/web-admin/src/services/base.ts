@@ -35,11 +35,25 @@ export async function serviceCall<T>(
 // ── Slug helper ────────────────────────────────────────────
 
 export function toSlug(text: string, maxLen = 80): string {
-  return text
+  // Try Latin-based slug first
+  const latin = text
     .toLowerCase()
     .replace(/[^a-z0-9\s-]/g, "")
     .replace(/\s+/g, "-")
+    .replace(/^-+|-+$/g, "")
     .slice(0, maxLen);
+
+  if (latin.length > 0) return latin;
+
+  // For non-Latin scripts (Tamil, Sanskrit, Hindi, Malayalam), use a
+  // transliteration-friendly approach: keep Unicode letters/digits
+  const unicode = text
+    .trim()
+    .replace(/\s+/g, "-")
+    .replace(/[^\p{L}\p{N}-]/gu, "")
+    .slice(0, maxLen);
+
+  return unicode.length > 0 ? unicode : `item-${Date.now()}`;
 }
 
 // ── Timestamp helper ───────────────────────────────────────

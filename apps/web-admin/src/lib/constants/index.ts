@@ -6,30 +6,20 @@ export const APP_DESCRIPTION = "System Administration Panel";
 export const ROUTES = {
   DASHBOARD: "/",
   LOGIN: "/login",
-  ANALYTICS: "/analytics",
-  REPORTS: "/reports",
   USERS: "/users",
-  CONTENT: "/content",
   AUTHORS: "/authors",
   CATEGORIES: "/categories",
+  KRITHIS: "/krithis",
+  DHARMAS: "/dharmas",
+  GURU_PHOTOS: "/guru-photos",
   SETTINGS: "/settings",
-  ROLES: "/roles",
-  AUDIT_LOGS: "/logs",
-  INTEGRATIONS: "/integrations",
-} as const;
-
-export const USER_STATUS = {
-  ACTIVE: "active",
-  SUSPENDED: "suspended",
-  PENDING: "pending",
-  DEACTIVATED: "deactivated",
+  AUDIT_LOG: "/audit-log",
 } as const;
 
 export const ADMIN_ROLES = {
-  SUPER_ADMIN: "SUPER_ADMIN",
-  ADMIN: "ADMIN",
-  MODERATOR: "MODERATOR",
-  VIEWER: "VIEWER",
+  SUPER_ADMIN: "super_admin",
+  ADMIN: "admin",
+  AUTHOR: "author",
 } as const;
 
 export const PAGINATION = {
@@ -39,8 +29,6 @@ export const PAGINATION = {
 } as const;
 
 export const STORAGE_KEYS = {
-  AUTH_TOKEN: "auth_token",
-  REFRESH_TOKEN: "refresh_token",
   SIDEBAR_COLLAPSED: "sidebar_collapsed",
   TABLE_PREFERENCES: "table_preferences",
 } as const;

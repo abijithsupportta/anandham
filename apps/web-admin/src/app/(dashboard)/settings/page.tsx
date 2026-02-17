@@ -2,25 +2,19 @@
 
 import { useState } from "react";
 import {
-  Settings,
   Save,
   Globe,
   Shield,
   Bell,
-  Palette,
   Database,
-  ToggleLeft,
-  ToggleRight,
   Info,
 } from "lucide-react";
+import type { AppSettings as BaseAppSettings, ContentLanguage } from "@/types/database";
 
-interface AppSettings {
-  site_name: string;
-  site_description: string;
+// Extended settings for the admin UI (superset of database AppSettings)
+// TODO: Wire to Supabase when settings table is created
+interface AdminSettings extends BaseAppSettings {
   support_email: string;
-  maintenance_mode: boolean;
-  allow_registration: boolean;
-  auto_approve_authors: boolean;
   require_email_verification: boolean;
   max_krithi_length: number;
   min_krithi_length: number;
@@ -29,11 +23,10 @@ interface AppSettings {
   notification_email_new_author: boolean;
   notification_email_new_report: boolean;
   notification_email_daily_digest: boolean;
-  default_language: string;
   content_guidelines_url: string;
 }
 
-const initialSettings: AppSettings = {
+const initialSettings: AdminSettings = {
   site_name: "",
   site_description: "",
   support_email: "",
@@ -48,7 +41,8 @@ const initialSettings: AppSettings = {
   notification_email_new_author: false,
   notification_email_new_report: false,
   notification_email_daily_digest: false,
-  default_language: "",
+  default_language: "ta",
+  supported_languages: ["ta", "en", "sa"],
   content_guidelines_url: "",
 };
 
@@ -76,7 +70,7 @@ function Toggle({
 }
 
 export default function SettingsPage() {
-  const [settings, setSettings] = useState<AppSettings>(initialSettings);
+  const [settings, setSettings] = useState<AdminSettings>(initialSettings);
   const [saved, setSaved] = useState(false);
   const [activeTab, setActiveTab] = useState("general");
 
@@ -86,9 +80,9 @@ export default function SettingsPage() {
     setTimeout(() => setSaved(false), 3000);
   }
 
-  function update<K extends keyof AppSettings>(
+  function update<K extends keyof AdminSettings>(
     key: K,
-    value: AppSettings[K]
+    value: AdminSettings[K]
   ) {
     setSettings((prev) => ({ ...prev, [key]: value }));
     setSaved(false);
@@ -199,7 +193,7 @@ export default function SettingsPage() {
               </label>
               <select
                 value={settings.default_language}
-                onChange={(e) => update("default_language", e.target.value)}
+                onChange={(e) => update("default_language", e.target.value as ContentLanguage)}
                 className="w-full max-w-md rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
               >
                 <option value="ta">Tamil (தமிழ்)</option>

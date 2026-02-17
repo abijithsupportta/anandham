@@ -7,10 +7,9 @@ import {
   PenTool,
   BookOpen,
   FolderTree,
-  Image,
+  Image as ImageIcon,
   Settings,
   LogOut,
-  Shield,
   ChevronLeft,
   ChevronDown,
   Menu,
@@ -19,6 +18,7 @@ import {
   Layers,
 } from "lucide-react";
 import { useState } from "react";
+import Image from "next/image";
 import { useAuth } from "@/components/providers/auth-provider";
 
 interface NavItem {
@@ -47,7 +47,7 @@ const sidebarEntries: SidebarEntry[] = [
     children: [
       { name: "Guru Krithis", href: "/krithis", icon: BookOpen },
       { name: "Guru Dharmas", href: "/dharmas", icon: ScrollText },
-      { name: "Guru Photos", href: "/guru-photos", icon: Image },
+      { name: "Guru Photos", href: "/guru-photos", icon: ImageIcon },
       { name: "Categories", href: "/categories", icon: FolderTree },
     ],
   },
@@ -131,11 +131,11 @@ export default function Sidebar() {
         {/* Header */}
         <div className="flex h-16 items-center justify-between border-b border-gray-100 px-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-600">
-              <Shield className="h-5 w-5 text-white" />
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-600 overflow-hidden">
+              <Image src="/web-logo.png" alt="Anandham" width={36} height={36} className="h-full w-full object-cover" />
             </div>
             {!collapsed && (
-              <span className="text-lg font-bold text-gray-900">AMA</span>
+              <span className="text-lg font-bold text-gray-900">Anandham</span>
             )}
           </div>
           <button

@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import {
-  Filter,
   Calendar,
   User,
   ArrowUpCircle,
@@ -17,7 +16,12 @@ import SearchInput from "@/components/ui/search-input";
 import Pagination from "@/components/ui/pagination";
 import PageHeader from "@/components/ui/page-header";
 import LoadingState from "@/components/ui/loading-state";
-import type { AuditAction, AuditLog } from "@/types/database";
+import type { AuditAction, AuditLog, Profile } from "@/types/database";
+
+// Audit log with joined user profile
+interface AuditLogWithUser extends Omit<AuditLog, 'user'> {
+  user: Profile | null;
+}
 
 const tableOptions = [
   "all",
@@ -54,8 +58,8 @@ const tableLabels: Record<string, string> = {
 };
 
 export default function AuditLogPage() {
-  const { data: logs, loading } = useQuery<AuditLog>(
-    () => auditLogService.getRecent()
+  const { data: logs, loading } = useQuery<AuditLogWithUser>(
+    () => auditLogService.getRecent() as Promise<import("@/services/base").ServiceResult<AuditLogWithUser[]>>
   );
 
   const [search, setSearch] = useState("");
@@ -66,7 +70,7 @@ export default function AuditLogPage() {
   const perPage = 20;
 
   const filtered = logs.filter((log) => {
-    const userName = (log.user as any)?.full_name ?? "";
+    const userName = log.user?.full_name ?? "";
     const matchesSearch =
       log.table_name.toLowerCase().includes(search.toLowerCase()) ||
       log.record_id.toLowerCase().includes(search.toLowerCase()) ||
@@ -144,7 +148,7 @@ export default function AuditLogPage() {
                 </div>
                 <div className="hidden items-center gap-1.5 text-xs text-gray-500 md:flex">
                   <User className="h-3.5 w-3.5" />
-                  {(log.user as any)?.full_name ?? "System"}
+                  {log.user?.full_name ?? "System"}
                 </div>
                 <div className="flex items-center gap-1.5 text-xs text-gray-400">
                   <Calendar className="h-3.5 w-3.5" />

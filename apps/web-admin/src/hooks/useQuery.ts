@@ -63,6 +63,8 @@ export function useMutation<TInput>(
   const [loading, setLoading] = useState(false);
   const mutationFnRef = useRef(mutationFn);
   mutationFnRef.current = mutationFn;
+  const optionsRef = useRef(options);
+  optionsRef.current = options;
 
   const mutate = useCallback(
     async (input: TInput): Promise<boolean> => {
@@ -71,17 +73,17 @@ export function useMutation<TInput>(
       setLoading(false);
 
       if (result.error) {
-        toast(options.errorMessage ?? result.error, "error");
+        toast(optionsRef.current.errorMessage ?? result.error, "error");
         return false;
       }
 
-      if (options.successMessage) {
-        toast(options.successMessage, "success");
+      if (optionsRef.current.successMessage) {
+        toast(optionsRef.current.successMessage, "success");
       }
-      options.onSuccess?.();
+      optionsRef.current.onSuccess?.();
       return true;
     },
-    [toast, options]
+    [toast]
   );
 
   return { mutate, loading };

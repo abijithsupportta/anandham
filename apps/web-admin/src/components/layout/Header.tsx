@@ -9,10 +9,12 @@ const routeNames: Record<string, string> = {
   "": "Dashboard",
   users: "Users",
   authors: "Authors",
-  content: "Content",
   categories: "Categories",
-  reports: "Reports",
+  krithis: "Krithis",
+  dharmas: "Dharmas",
+  "guru-photos": "Guru Photos",
   settings: "Settings",
+  "audit-log": "Audit Log",
 };
 
 export default function Header() {
