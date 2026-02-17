@@ -60,12 +60,12 @@ export const dashboardService = {
         keerthanamsTotal, keerthanamsPublished, keerthanamsDraft,
         blogsTotal, blogsPublished, blogsDraft,
       ] = await Promise.all([
-        countTable("guru_krithis"),
-        countTable("guru_krithis", { status: "published" }),
-        countTable("guru_krithis", { status: "draft" }),
-        countTable("guru_dharmas"),
-        countTable("guru_dharmas", { status: "published" }),
-        countTable("guru_dharmas", { status: "draft" }),
+        countTable("krithis"),
+        countTable("krithis", { status: "published" }),
+        countTable("krithis", { status: "draft" }),
+        countTable("dharmas"),
+        countTable("dharmas", { status: "published" }),
+        countTable("dharmas", { status: "draft" }),
         countTable("guru_photos"),
         countTable("guru_photos", { status: "published" }),
         countTable("guru_photos", { status: "draft" }),
@@ -136,11 +136,11 @@ export const dashboardService = {
       const sb = getSupabase();
 
       const [krithis, dharmas, blogs, keerthanams, photos] = await Promise.all([
-        sb.from("guru_krithis")
+        sb.from("krithis")
           .select("id, title, updated_at")
           .eq("status", "draft").eq("is_deleted", false)
           .order("updated_at", { ascending: false }).limit(limit),
-        sb.from("guru_dharmas")
+        sb.from("dharmas")
           .select("id, title, updated_at")
           .eq("status", "draft").eq("is_deleted", false)
           .order("updated_at", { ascending: false }).limit(limit),
@@ -192,9 +192,9 @@ export const dashboardService = {
       const counts = new Map<string, number>();
       for (const cat of cats) counts.set(cat.id, 0);
 
-      // guru_krithis.category_id
+      // krithis.category_id
       const { data: krithiCats } = await sb
-        .from("guru_krithis")
+        .from("krithis")
         .select("category_id")
         .eq("is_deleted", false)
         .not("category_id", "is", null);
@@ -203,9 +203,9 @@ export const dashboardService = {
           counts.set(r.category_id, (counts.get(r.category_id) ?? 0) + 1);
       }
 
-      // guru_dharmas.category_id
+      // dharmas.category_id
       const { data: dharmaCats } = await sb
-        .from("guru_dharmas")
+        .from("dharmas")
         .select("category_id")
         .eq("is_deleted", false)
         .not("category_id", "is", null);
@@ -252,9 +252,9 @@ export const dashboardService = {
         const label = d.toLocaleString("en-US", { month: "short" });
 
         const [k, dh, b, ke] = await Promise.all([
-          sb.from("guru_krithis").select("id", { count: "exact", head: true })
+          sb.from("krithis").select("id", { count: "exact", head: true })
             .eq("is_deleted", false).gte("created_at", start).lt("created_at", end),
-          sb.from("guru_dharmas").select("id", { count: "exact", head: true })
+          sb.from("dharmas").select("id", { count: "exact", head: true })
             .eq("is_deleted", false).gte("created_at", start).lt("created_at", end),
           sb.from("blogs").select("id", { count: "exact", head: true })
             .eq("is_deleted", false).gte("created_at", start).lt("created_at", end),
