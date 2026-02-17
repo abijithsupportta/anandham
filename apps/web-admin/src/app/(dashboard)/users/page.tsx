@@ -19,6 +19,7 @@ import StatusBadge from "@/components/ui/status-badge";
 import Pagination from "@/components/ui/pagination";
 import PageHeader from "@/components/ui/page-header";
 import LoadingState from "@/components/ui/loading-state";
+import ErrorState from "@/components/ui/error-state";
 import EmptyState from "@/components/ui/empty-state";
 import type { UserRole, Profile } from "@/types/database";
 
@@ -37,7 +38,7 @@ const roleFilters: { label: string; value: "all" | UserRole }[] = [
 
 export default function UsersPage() {
   const { toast } = useToast();
-  const { data: users, loading, refetch } = useQuery<Profile>(
+  const { data: users, loading, error, refetch } = useQuery<Profile>(
     () => userService.getAll()
   );
 
@@ -70,6 +71,7 @@ export default function UsersPage() {
   const paged = filtered.slice((currentPage - 1) * perPage, currentPage * perPage);
 
   if (loading) return <LoadingState message="Loading users..." />;
+  if (error) return <ErrorState message={error} onRetry={refetch} />;
 
   return (
     <div className="space-y-6">

@@ -16,6 +16,7 @@ import SearchInput from "@/components/ui/search-input";
 import Pagination from "@/components/ui/pagination";
 import PageHeader from "@/components/ui/page-header";
 import LoadingState from "@/components/ui/loading-state";
+import ErrorState from "@/components/ui/error-state";
 import type { AuditAction, AuditLog, Profile } from "@/types/database";
 
 // Audit log with joined user profile
@@ -58,7 +59,7 @@ const tableLabels: Record<string, string> = {
 };
 
 export default function AuditLogPage() {
-  const { data: logs, loading } = useQuery<AuditLogWithUser>(
+  const { data: logs, loading, error, refetch } = useQuery<AuditLogWithUser>(
     () => auditLogService.getRecent() as Promise<import("@/services/base").ServiceResult<AuditLogWithUser[]>>
   );
 
@@ -95,6 +96,7 @@ export default function AuditLogPage() {
   }
 
   if (loading) return <LoadingState message="Loading audit logs..." />;
+  if (error) return <ErrorState message={error} onRetry={refetch} />;
 
   return (
     <div className="space-y-6">

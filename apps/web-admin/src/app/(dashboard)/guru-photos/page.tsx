@@ -17,11 +17,12 @@ import StatusBadge from "@/components/ui/status-badge";
 import Pagination from "@/components/ui/pagination";
 import PageHeader from "@/components/ui/page-header";
 import LoadingState from "@/components/ui/loading-state";
+import ErrorState from "@/components/ui/error-state";
 import EmptyState from "@/components/ui/empty-state";
 
 export default function GuruPhotosPage() {
   const { toast } = useToast();
-  const { data: photos, loading, refetch } = useQuery<GuruPhoto>(
+  const { data: photos, loading, error, refetch } = useQuery<GuruPhoto>(
     () => guruPhotoService.getAll()
   );
 
@@ -56,6 +57,7 @@ export default function GuruPhotosPage() {
   }
 
   if (loading) return <LoadingState message="Loading photos..." />;
+  if (error) return <ErrorState message={error} onRetry={refetch} />;
 
   return (
     <div className="space-y-6">

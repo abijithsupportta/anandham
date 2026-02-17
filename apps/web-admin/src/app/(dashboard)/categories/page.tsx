@@ -19,6 +19,7 @@ import {
 import SearchInput from "@/components/ui/search-input";
 import PageHeader from "@/components/ui/page-header";
 import LoadingState from "@/components/ui/loading-state";
+import ErrorState from "@/components/ui/error-state";
 import EmptyState from "@/components/ui/empty-state";
 
 // ── Form data type ─────────────────────────────────────────
@@ -54,10 +55,11 @@ export default function CategoriesPage() {
   const {
     data: categories,
     loading: catLoading,
+    error: catError,
     refetch: refetchCategories,
   } = useQuery<Category>(() => categoryService.getAll());
 
-  const { data: contentTypes, loading: ctLoading } = useQuery<ContentType>(
+  const { data: contentTypes, loading: ctLoading, error: ctError } = useQuery<ContentType>(
     () => categoryService.getContentTypes()
   );
 
@@ -163,6 +165,7 @@ export default function CategoriesPage() {
   // ── Render ───────────────────────────────────────────────
 
   if (loading) return <LoadingState message="Loading categories..." />;
+  if (catError || ctError) return <ErrorState message={catError || ctError || "Failed to load categories"} onRetry={refetchCategories} />;
 
   return (
     <div className="space-y-6">

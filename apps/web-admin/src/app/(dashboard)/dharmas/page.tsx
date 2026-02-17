@@ -12,11 +12,12 @@ import StatusBadge from "@/components/ui/status-badge";
 import Pagination from "@/components/ui/pagination";
 import PageHeader from "@/components/ui/page-header";
 import LoadingState from "@/components/ui/loading-state";
+import ErrorState from "@/components/ui/error-state";
 import EmptyState from "@/components/ui/empty-state";
 
 export default function DharmasPage() {
   const { toast } = useToast();
-  const { data: dharmas, loading, refetch } = useQuery<Dharma>(
+  const { data: dharmas, loading, error, refetch } = useQuery<Dharma>(
     () => dharmaService.getAll()
   );
 
@@ -51,6 +52,7 @@ export default function DharmasPage() {
   }
 
   if (loading) return <LoadingState message="Loading dharmas..." />;
+  if (error) return <ErrorState message={error} onRetry={refetch} />;
 
   return (
     <div className="space-y-6">

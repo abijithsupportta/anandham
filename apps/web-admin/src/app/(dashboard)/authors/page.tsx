@@ -19,6 +19,7 @@ import SearchInput from "@/components/ui/search-input";
 import Pagination from "@/components/ui/pagination";
 import PageHeader from "@/components/ui/page-header";
 import LoadingState from "@/components/ui/loading-state";
+import ErrorState from "@/components/ui/error-state";
 
 interface AuthorFormData {
   name: string;
@@ -36,7 +37,7 @@ const emptyForm: AuthorFormData = {
 
 export default function AuthorsPage() {
   const { toast } = useToast();
-  const { data: authors, loading, refetch } = useQuery<Author>(
+  const { data: authors, loading, error, refetch } = useQuery<Author>(
     () => authorService.getAll()
   );
 
@@ -125,6 +126,7 @@ export default function AuthorsPage() {
   const activeCount = authors.filter((a) => a.is_active).length;
 
   if (loading) return <LoadingState message="Loading authors..." />;
+  if (error) return <ErrorState message={error} onRetry={refetch} />;
 
   return (
     <div className="space-y-6">

@@ -12,11 +12,12 @@ import StatusBadge from "@/components/ui/status-badge";
 import Pagination from "@/components/ui/pagination";
 import PageHeader from "@/components/ui/page-header";
 import LoadingState from "@/components/ui/loading-state";
+import ErrorState from "@/components/ui/error-state";
 import EmptyState from "@/components/ui/empty-state";
 
 export default function KrithisPage() {
   const { toast } = useToast();
-  const { data: krithis, loading, refetch } = useQuery<Krithi>(
+  const { data: krithis, loading, error, refetch } = useQuery<Krithi>(
     () => krithiService.getAll()
   );
 
@@ -63,6 +64,7 @@ export default function KrithisPage() {
   // ── Render ───────────────────────────────────────────────
 
   if (loading) return <LoadingState message="Loading krithis..." />;
+  if (error) return <ErrorState message={error} onRetry={refetch} />;
 
   return (
     <div className="space-y-6">
