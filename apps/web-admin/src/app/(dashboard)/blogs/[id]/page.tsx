@@ -23,7 +23,7 @@ import {
   Youtube,
 } from "lucide-react";
 import PageHeader from "@/components/ui/page-header";
-import LoadingState from "@/components/ui/loading-state";
+import { FormPageSkeleton } from "@/components/ui/page-skeleton";
 
 // ── Helpers ────────────────────────────────────────────────
 
@@ -226,7 +226,7 @@ export default function BlogFormPage() {
 
   // ── Render ───────────────────────────────────────────────
 
-  if (loading) return <LoadingState message="Loading blog post..." />;
+  if (loading) return <FormPageSkeleton />;
 
   // Build category options with hierarchy
   const topLevelCats = categories.filter((c) => !c.parent_id);

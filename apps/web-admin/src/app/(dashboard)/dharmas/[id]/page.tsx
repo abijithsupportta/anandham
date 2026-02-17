@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import PageHeader from "@/components/ui/page-header";
-import LoadingState from "@/components/ui/loading-state";
+import { FormPageSkeleton } from "@/components/ui/page-skeleton";
 
 // ── Helpers ────────────────────────────────────────────────
 
@@ -203,7 +203,7 @@ export default function DharmaFormPage() {
 
   // ── Render ───────────────────────────────────────────────
 
-  if (loading) return <LoadingState message="Loading dharma..." />;
+  if (loading) return <FormPageSkeleton />;
 
   return (
     <div

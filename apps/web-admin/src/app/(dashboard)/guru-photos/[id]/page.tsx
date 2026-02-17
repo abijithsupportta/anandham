@@ -18,7 +18,7 @@ import {
 import Link from "next/link";
 import Image from "next/image";
 import PageHeader from "@/components/ui/page-header";
-import LoadingState from "@/components/ui/loading-state";
+import { FormPageSkeleton } from "@/components/ui/page-skeleton";
 
 // ── Upload helper ──────────────────────────────────────────
 
@@ -238,7 +238,7 @@ export default function GuruPhotoFormPage() {
 
   // ── Render ───────────────────────────────────────────────
 
-  if (loading) return <LoadingState message="Loading guru photo..." />;
+  if (loading) return <FormPageSkeleton />;
 
   return (
     <div className="mx-auto max-w-4xl space-y-6" onKeyDown={handleKeyDown}>

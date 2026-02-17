@@ -13,7 +13,6 @@ import {
   Clock,
   Music,
   FileText,
-  Loader2,
 } from "lucide-react";
 import {
   AreaChart,
@@ -36,6 +35,7 @@ import {
   type MonthlyGrowth,
 } from "@/services/dashboard.service";
 import type { AuditLog } from "@/types/database";
+import { DashboardSkeleton } from "@/components/ui/page-skeleton";
 
 // ── Helpers ────────────────────────────────────────────────
 
@@ -133,11 +133,7 @@ export default function DashboardPage() {
   }, []);
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-32">
-        <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   // ── Build stat cards from real data ──────────────────────

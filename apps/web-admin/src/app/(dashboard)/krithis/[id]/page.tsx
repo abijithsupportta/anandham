@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import PageHeader from "@/components/ui/page-header";
-import LoadingState from "@/components/ui/loading-state";
+import { FormPageSkeleton } from "@/components/ui/page-skeleton";
 
 // ── Helpers ────────────────────────────────────────────────
 
@@ -137,7 +137,7 @@ export default function KrithiFormPage() {
 
   // ── Render ───────────────────────────────────────────────
 
-  if (loading) return <LoadingState message="Loading krithi..." />;
+  if (loading) return <FormPageSkeleton />;
 
   return (
     <div className={`space-y-6 ${expanded ? "fixed inset-0 z-50 overflow-y-auto bg-surface-hover p-6" : "mx-auto max-w-4xl"}`} onKeyDown={handleKeyDown}>
