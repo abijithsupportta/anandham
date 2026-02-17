@@ -12,23 +12,47 @@ import {
   LogOut,
   Shield,
   ChevronLeft,
+  ChevronDown,
   Menu,
   ScrollText,
-  ClipboardList,
   Users,
+  Layers,
 } from "lucide-react";
 import { useState } from "react";
 import { useAuth } from "@/components/providers/auth-provider";
 
-const navigation = [
+interface NavItem {
+  name: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+}
+
+interface NavGroup {
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  children: NavItem[];
+}
+
+type SidebarEntry = NavItem | NavGroup;
+
+function isGroup(entry: SidebarEntry): entry is NavGroup {
+  return "children" in entry;
+}
+
+const sidebarEntries: SidebarEntry[] = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
-  { name: "Guru Krithis", href: "/krithis", icon: BookOpen },
-  { name: "Guru Dharmas", href: "/dharmas", icon: ScrollText },
-  { name: "Guru Photos", href: "/guru-photos", icon: Image },
-  { name: "Categories", href: "/categories", icon: FolderTree },
+  {
+    label: "Content Management",
+    icon: Layers,
+    children: [
+      { name: "Guru Krithis", href: "/krithis", icon: BookOpen },
+      { name: "Guru Dharmas", href: "/dharmas", icon: ScrollText },
+      { name: "Guru Photos", href: "/guru-photos", icon: Image },
+      { name: "Categories", href: "/categories", icon: FolderTree },
+    ],
+  },
+  { name: "User Management", href: "/users", icon: Users },
   { name: "Authors", href: "/authors", icon: PenTool },
-  { name: "Users", href: "/users", icon: Users },
-  { name: "Audit Log", href: "/audit-log", icon: ClipboardList },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 
@@ -36,11 +60,49 @@ export default function Sidebar() {
   const pathname = usePathname();
   const { user, signOut } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
+    "Content Management": true,
+  });
 
   const isActive = (href: string) => {
     if (href === "/") return pathname === "/";
     return pathname.startsWith(href);
   };
+
+  const isGroupActive = (group: NavGroup) =>
+    group.children.some((child) => isActive(child.href));
+
+  function toggleGroup(label: string) {
+    setOpenGroups((prev) => ({ ...prev, [label]: !prev[label] }));
+  }
+
+  function renderLink(item: NavItem, indent = false) {
+    const active = isActive(item.href);
+    return (
+      <Link
+        key={item.name}
+        href={item.href}
+        onClick={() => {
+          if (window.innerWidth < 1024) setCollapsed(true);
+        }}
+        className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+          indent && !collapsed ? "ml-4" : ""
+        } ${
+          active
+            ? "bg-indigo-50 text-indigo-700"
+            : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+        }`}
+        title={collapsed ? item.name : undefined}
+      >
+        <item.icon
+          className={`h-5 w-5 shrink-0 ${
+            active ? "text-indigo-600" : "text-gray-400"
+          }`}
+        />
+        {!collapsed && <span>{item.name}</span>}
+      </Link>
+    );
+  }
 
   return (
     <>
@@ -90,30 +152,52 @@ export default function Sidebar() {
 
         {/* Navigation */}
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
-          {navigation.map((item) => {
-            const active = isActive(item.href);
-            return (
-              <Link
-                key={item.name}
-                href={item.href}
-                onClick={() => {
-                  if (window.innerWidth < 1024) setCollapsed(true);
-                }}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                  active
-                    ? "bg-indigo-50 text-indigo-700"
-                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                }`}
-                title={collapsed ? item.name : undefined}
-              >
-                <item.icon
-                  className={`h-5 w-5 shrink-0 ${
-                    active ? "text-indigo-600" : "text-gray-400"
-                  }`}
-                />
-                {!collapsed && <span>{item.name}</span>}
-              </Link>
-            );
+          {sidebarEntries.map((entry) => {
+            if (isGroup(entry)) {
+              const groupActive = isGroupActive(entry);
+              const groupOpen = openGroups[entry.label] ?? false;
+
+              // When sidebar is collapsed, just show the icon
+              if (collapsed) {
+                return (
+                  <div key={entry.label} className="space-y-1">
+                    {entry.children.map((child) => renderLink(child))}
+                  </div>
+                );
+              }
+
+              return (
+                <div key={entry.label} className="space-y-0.5">
+                  <button
+                    onClick={() => toggleGroup(entry.label)}
+                    className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                      groupActive
+                        ? "text-indigo-700"
+                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                    }`}
+                  >
+                    <entry.icon
+                      className={`h-5 w-5 shrink-0 ${
+                        groupActive ? "text-indigo-600" : "text-gray-400"
+                      }`}
+                    />
+                    <span className="flex-1 text-left">{entry.label}</span>
+                    <ChevronDown
+                      className={`h-4 w-4 text-gray-400 transition-transform ${
+                        groupOpen ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
+                  {groupOpen && (
+                    <div className="space-y-0.5">
+                      {entry.children.map((child) => renderLink(child, true))}
+                    </div>
+                  )}
+                </div>
+              );
+            }
+
+            return renderLink(entry);
           })}
         </nav>
 

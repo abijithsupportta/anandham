@@ -125,6 +125,7 @@ export interface Dharma {
   category_id?: string | null;
   author_id?: string | null;
   language: ContentLanguage;
+  youtube_url?: string | null;
   status: ContentStatus;
   published_at?: string | null;
   is_deleted: boolean;

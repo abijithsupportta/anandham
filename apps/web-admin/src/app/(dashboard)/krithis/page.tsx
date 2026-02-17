@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import type { Krithi, ContentStatus, ContentLanguage } from "@/types/database";
+import type { Krithi, ContentStatus } from "@/types/database";
 import Link from "next/link";
 import {
   BookOpen,
@@ -9,9 +9,6 @@ import {
   Eye,
   Pencil,
   Trash2,
-  MoreVertical,
-  Globe,
-  FileText,
   Youtube,
 } from "lucide-react";
 import SearchInput from "@/components/ui/search-input";
@@ -19,22 +16,12 @@ import StatusBadge from "@/components/ui/status-badge";
 import Pagination from "@/components/ui/pagination";
 import { createClient } from "@/lib/supabase/client";
 
-const languageLabels: Record<ContentLanguage, string> = {
-  ta: "Tamil",
-  en: "English",
-  sa: "Sanskrit",
-  ml: "Malayalam",
-  hi: "Hindi",
-};
-
 export default function KrithisPage() {
   const [krithis, setKrithis] = useState<Krithi[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | ContentStatus>("all");
-  const [languageFilter, setLanguageFilter] = useState<"all" | ContentLanguage>("all");
   const [page, setPage] = useState(1);
-  const [openMenu, setOpenMenu] = useState<string | null>(null);
   const perPage = 10;
 
   const supabase = createClient();
@@ -43,7 +30,7 @@ export default function KrithisPage() {
     setLoading(true);
     const query = supabase
       .from("krithis")
-      .select("*, category:categories(id, name), author:authors(id, name)")
+      .select("*, category:categories(id, name)")
       .eq("is_deleted", false)
       .order("created_at", { ascending: false });
 
@@ -64,8 +51,7 @@ export default function KrithisPage() {
       k.title.toLowerCase().includes(search.toLowerCase()) ||
       k.description.toLowerCase().includes(search.toLowerCase());
     const matchesStatus = statusFilter === "all" || k.status === statusFilter;
-    const matchesLanguage = languageFilter === "all" || k.language === languageFilter;
-    return matchesSearch && matchesStatus && matchesLanguage;
+    return matchesSearch && matchesStatus;
   });
 
   const totalPages = Math.ceil(filtered.length / perPage);
@@ -85,7 +71,6 @@ export default function KrithisPage() {
         prev.map((k) => (k.id === krithi.id ? { ...k, ...updates } as Krithi : k))
       );
     }
-    setOpenMenu(null);
   }
 
   async function handleDelete(id: string) {
@@ -95,7 +80,6 @@ export default function KrithisPage() {
       .eq("id", id);
 
     if (!error) setKrithis((prev) => prev.filter((k) => k.id !== id));
-    setOpenMenu(null);
   }
 
   return (
@@ -104,7 +88,7 @@ export default function KrithisPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Guru Krithis</h1>
-          <p className="mt-1 text-sm text-gray-500">Manage sacred poems with slokas</p>
+          <p className="mt-1 text-sm text-gray-500">Manage sacred poems</p>
         </div>
         <Link
           href="/krithis/new"
@@ -118,29 +102,15 @@ export default function KrithisPage() {
       {/* Filters */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <SearchInput value={search} onChange={setSearch} placeholder="Search krithis..." className="sm:w-72" />
-        <div className="flex gap-2">
-          <select
-            value={statusFilter}
-            onChange={(e) => { setStatusFilter(e.target.value as "all" | ContentStatus); setPage(1); }}
-            className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-          >
-            <option value="all">All Status</option>
-            <option value="draft">Draft</option>
-            <option value="published">Published</option>
-          </select>
-          <select
-            value={languageFilter}
-            onChange={(e) => { setLanguageFilter(e.target.value as "all" | ContentLanguage); setPage(1); }}
-            className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-          >
-            <option value="all">All Languages</option>
-            <option value="ta">Tamil</option>
-            <option value="en">English</option>
-            <option value="sa">Sanskrit</option>
-            <option value="ml">Malayalam</option>
-            <option value="hi">Hindi</option>
-          </select>
-        </div>
+        <select
+          value={statusFilter}
+          onChange={(e) => { setStatusFilter(e.target.value as "all" | ContentStatus); setPage(1); }}
+          className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+        >
+          <option value="all">All Status</option>
+          <option value="draft">Draft</option>
+          <option value="published">Published</option>
+        </select>
       </div>
 
       {/* Table */}
@@ -155,9 +125,6 @@ export default function KrithisPage() {
               <tr className="border-b border-gray-200 bg-gray-50">
                 <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Krithi</th>
                 <th className="hidden px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 md:table-cell">Category</th>
-                <th className="hidden px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500 lg:table-cell">Author</th>
-                <th className="px-6 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500">Slokas</th>
-                <th className="hidden px-6 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500 sm:table-cell">Lang</th>
                 <th className="px-6 py-3 text-center text-xs font-semibold uppercase tracking-wider text-gray-500">Status</th>
                 <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">Actions</th>
               </tr>
@@ -173,7 +140,7 @@ export default function KrithisPage() {
                       <div>
                         <p className="text-sm font-semibold text-gray-900">{krithi.title}</p>
                         <p className="text-xs text-gray-500">
-                          {krithi.description.slice(0, 50)}{krithi.description.length > 50 ? "..." : ""}
+                          {krithi.description.slice(0, 60)}{krithi.description.length > 60 ? "..." : ""}
                         </p>
                       </div>
                       {krithi.youtube_url && <Youtube className="h-4 w-4 text-red-500" />}
@@ -184,67 +151,37 @@ export default function KrithisPage() {
                       {krithi.category?.name ?? "—"}
                     </span>
                   </td>
-                  <td className="hidden px-6 py-4 lg:table-cell">
-                    <span className="text-sm text-gray-700">{krithi.author?.name ?? "—"}</span>
-                  </td>
-                  <td className="px-6 py-4 text-center">
-                    <div className="flex items-center justify-center gap-1">
-                      <FileText className="h-3.5 w-3.5 text-gray-400" />
-                      <span className="text-sm font-medium text-gray-700">{krithi.sloka_count ?? 0}</span>
-                    </div>
-                  </td>
-                  <td className="hidden px-6 py-4 text-center sm:table-cell">
-                    <span className="inline-flex items-center gap-1 text-xs text-gray-500">
-                      <Globe className="h-3 w-3" />
-                      {languageLabels[krithi.language]}
-                    </span>
-                  </td>
                   <td className="px-6 py-4 text-center">
                     <StatusBadge status={krithi.status} />
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <div className="relative inline-block">
-                      <button
-                        onClick={() => setOpenMenu(openMenu === krithi.id ? null : krithi.id)}
-                        className="rounded-lg p-1.5 text-gray-400 transition hover:bg-gray-100 hover:text-gray-600"
+                    <div className="flex items-center justify-end gap-2">
+                      <Link
+                        href={`/krithis/${krithi.id}`}
+                        className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100"
                       >
-                        <MoreVertical className="h-4 w-4" />
+                        <Pencil className="h-4 w-4" />
+                      </Link>
+                      <button
+                        onClick={() => handleToggleStatus(krithi)}
+                        className="rounded-md p-1.5 text-gray-500 hover:bg-gray-100"
+                        title={krithi.status === "draft" ? "Publish" : "Unpublish"}
+                      >
+                        <Eye className="h-4 w-4" />
                       </button>
-                      {openMenu === krithi.id && (
-                        <div className="absolute right-0 z-10 mt-1 w-40 rounded-lg border border-gray-200 bg-white py-1 shadow-lg">
-                          <Link
-                            href={`/krithis/${krithi.id}`}
-                            className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                          >
-                            <Eye className="h-4 w-4" />
-                            View / Edit
-                          </Link>
-                          <button
-                            onClick={() => handleToggleStatus(krithi)}
-                            className="flex w-full items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                          >
-                            {krithi.status === "draft" ? (
-                              <><BookOpen className="h-4 w-4" />Publish</>
-                            ) : (
-                              <><Pencil className="h-4 w-4" />Unpublish</>
-                            )}
-                          </button>
-                          <button
-                            onClick={() => handleDelete(krithi.id)}
-                            className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                            Delete
-                          </button>
-                        </div>
-                      )}
+                      <button
+                        onClick={() => handleDelete(krithi.id)}
+                        className="rounded-md p-1.5 text-red-500 hover:bg-red-50"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
                     </div>
                   </td>
                 </tr>
               ))}
               {paged.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-sm text-gray-400">
+                  <td colSpan={4} className="py-12 text-center text-sm text-gray-400">
                     No krithis found
                   </td>
                 </tr>
