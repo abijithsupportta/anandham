@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import 'package:anandham_user/presentation/blocs/krithis/krithi_detail_cubit.dart';
@@ -46,6 +47,35 @@ class _KrithiDetailViewState extends State<_KrithiDetailView> {
   late YoutubePlayerController _youtubeController;
   bool _youtubeReady = false;
 
+  Widget _sectionTitle(BuildContext context, String title) {
+    return Text(
+      title,
+      style: Theme.of(
+        context,
+      ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+    );
+  }
+
+  Widget _sectionCard(BuildContext context, String title, Widget child) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Theme.of(context).dividerColor),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _sectionTitle(context, title),
+          const SizedBox(height: 12),
+          child,
+        ],
+      ),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -79,6 +109,14 @@ class _KrithiDetailViewState extends State<_KrithiDetailView> {
     final title = widget.krithi['title'] as String? ?? 'Krithi';
     final description = widget.krithi['description'] as String? ?? '';
     final id = widget.krithi['id'] as String? ?? '';
+
+    final copyPayload = description.trim().isEmpty
+        ? title
+        : (StringBuffer()
+                ..writeln(title)
+                ..writeln('')
+                ..writeln(description))
+              .toString();
 
     return BlocBuilder<KrithiDetailCubit, KrithiDetailState>(
       builder: (context, state) {
@@ -131,29 +169,69 @@ class _KrithiDetailViewState extends State<_KrithiDetailView> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  title,
-                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    height: 1.3,
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surface,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Theme.of(context).dividerColor),
                   ),
-                ),
-                const SizedBox(height: 24),
-                if (description.isNotEmpty) ...[
-                  Text(
-                    description,
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      fontSize: state.fontSize,
-                      height: 1.6,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                ],
-                if (_youtubeReady)
-                  Column(
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              title,
+                              style: Theme.of(context).textTheme.displaySmall
+                                  ?.copyWith(
+                                    fontSize: state.fontSize + 8,
+                                    fontWeight: FontWeight.w800,
+                                    height: 1.3,
+                                  ),
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.copy_rounded),
+                            tooltip: 'Copy krithi',
+                            onPressed: () async {
+                              await Clipboard.setData(
+                                ClipboardData(text: copyPayload),
+                              );
+                              if (!context.mounted) {
+                                return;
+                              }
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Krithi copied'),
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                      if (description.isNotEmpty) ...[
+                        const SizedBox(height: 12),
+                        Text(
+                          description,
+                          style: Theme.of(context).textTheme.bodyLarge
+                              ?.copyWith(fontSize: state.fontSize, height: 1.7),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                if (_youtubeReady)
+                  _sectionCard(
+                    context,
+                    'Video',
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
                         color: Colors.black,
                         child: YoutubePlayer(
                           controller: _youtubeController,
@@ -166,8 +244,7 @@ class _KrithiDetailViewState extends State<_KrithiDetailView> {
                           },
                         ),
                       ),
-                      const SizedBox(height: 32),
-                    ],
+                    ),
                   ),
               ],
             ),
