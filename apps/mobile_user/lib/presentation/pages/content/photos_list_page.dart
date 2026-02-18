@@ -123,33 +123,39 @@ class _PhotosListPageState extends State<PhotosListPage> {
       return;
     }
 
-    if (_likedPhotoIds.contains(photoId)) {
-      if (!mounted) {
-        return;
-      }
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('You already loved this photo.'),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-      return;
-    }
+    final alreadyLiked = _likedPhotoIds.contains(photoId);
 
     final previousLiked = _likedPhotoIds;
     final previousCounts = _likeCounts;
 
     setState(() {
-      _likedPhotoIds = {..._likedPhotoIds, photoId};
-      _likeCounts = {..._likeCounts, photoId: (_likeCounts[photoId] ?? 0) + 1};
+      if (alreadyLiked) {
+        _likedPhotoIds = {..._likedPhotoIds}..remove(photoId);
+        final nextCount = (_likeCounts[photoId] ?? 0) - 1;
+        _likeCounts = {..._likeCounts, photoId: nextCount < 0 ? 0 : nextCount};
+      } else {
+        _likedPhotoIds = {..._likedPhotoIds, photoId};
+        _likeCounts = {
+          ..._likeCounts,
+          photoId: (_likeCounts[photoId] ?? 0) + 1,
+        };
+      }
       _likeInProgressIds = {..._likeInProgressIds, photoId};
     });
 
     try {
-      await SupabaseConfig.client.from('guru_photo_likes').upsert({
-        'user_id': userId,
-        'guru_photo_id': photoId,
-      }, onConflict: 'user_id,guru_photo_id');
+      if (alreadyLiked) {
+        await SupabaseConfig.client
+            .from('guru_photo_likes')
+            .delete()
+            .eq('user_id', userId)
+            .eq('guru_photo_id', photoId);
+      } else {
+        await SupabaseConfig.client.from('guru_photo_likes').upsert({
+          'user_id': userId,
+          'guru_photo_id': photoId,
+        }, onConflict: 'user_id,guru_photo_id');
+      }
 
       if (!mounted) {
         return;
@@ -157,7 +163,9 @@ class _PhotosListPageState extends State<PhotosListPage> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('You loved "$title"'),
+          content: Text(
+            alreadyLiked ? 'Love removed from "$title"' : 'You loved "$title"',
+          ),
           behavior: SnackBarBehavior.floating,
         ),
       );
