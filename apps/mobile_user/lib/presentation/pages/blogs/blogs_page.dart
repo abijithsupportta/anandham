@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:anandham_user/app/routes/route_names.dart';
 import 'package:anandham_user/presentation/blocs/blogs/blogs_list_cubit.dart';
 import 'package:anandham_user/presentation/blocs/blogs/blogs_list_state.dart';
@@ -29,7 +27,6 @@ class _BlogsListView extends StatefulWidget {
 class _BlogsListViewState extends State<_BlogsListView> {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  Timer? _searchDebounce;
 
   @override
   void initState() {
@@ -43,6 +40,10 @@ class _BlogsListViewState extends State<_BlogsListView> {
       return;
     }
 
+    if (context.read<BlogsListCubit>().state.query.trim().isNotEmpty) {
+      return;
+    }
+
     final threshold = _scrollController.position.maxScrollExtent - 240;
     if (_scrollController.position.pixels >= threshold) {
       context.read<BlogsListCubit>().loadMore();
@@ -50,18 +51,11 @@ class _BlogsListViewState extends State<_BlogsListView> {
   }
 
   void _handleSearch() {
-    _searchDebounce?.cancel();
-    _searchDebounce = Timer(const Duration(milliseconds: 350), () {
-      if (!mounted) {
-        return;
-      }
-      context.read<BlogsListCubit>().updateQuery(_searchController.text);
-    });
+    context.read<BlogsListCubit>().updateQuery(_searchController.text);
   }
 
   @override
   void dispose() {
-    _searchDebounce?.cancel();
     _scrollController.dispose();
     _searchController.dispose();
     super.dispose();
@@ -109,7 +103,14 @@ class _BlogsListViewState extends State<_BlogsListView> {
             );
           }
 
-          final items = state.items;
+          final query = state.query.trim().toLowerCase();
+          final filteredItems = query.isEmpty
+              ? state.items
+              : state.items.where((item) {
+                  final title = (item['title'] as String? ?? '').toLowerCase();
+                  return title.contains(query);
+                }).toList();
+          final showLoadMore = query.isEmpty && state.hasMore;
 
           return Column(
             children: [
@@ -136,10 +137,10 @@ class _BlogsListViewState extends State<_BlogsListView> {
                 ),
               ),
               Expanded(
-                child: items.isEmpty
+                child: filteredItems.isEmpty
                     ? Center(
                         child: Text(
-                          state.query.trim().isEmpty
+                          query.isEmpty
                               ? 'No blogs available'
                               : 'No blogs found',
                         ),
@@ -147,11 +148,12 @@ class _BlogsListViewState extends State<_BlogsListView> {
                     : ListView.separated(
                         controller: _scrollController,
                         padding: const EdgeInsets.symmetric(horizontal: 16),
-                        itemCount: items.length + (state.hasMore ? 1 : 0),
+                        itemCount:
+                            filteredItems.length + (showLoadMore ? 1 : 0),
                         separatorBuilder: (context, index) =>
                             const SizedBox(height: 16),
                         itemBuilder: (context, index) {
-                          if (index >= items.length) {
+                          if (index >= filteredItems.length) {
                             return Padding(
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               child: Center(
@@ -162,7 +164,7 @@ class _BlogsListViewState extends State<_BlogsListView> {
                             );
                           }
 
-                          final item = items[index];
+                          final item = filteredItems[index];
                           final blogId = (item['id'] as String?) ?? '';
 
                           return BlogListItem(

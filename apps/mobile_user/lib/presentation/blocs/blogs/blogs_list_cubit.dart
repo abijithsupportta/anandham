@@ -8,8 +8,7 @@ class BlogsListCubit extends Cubit<BlogsListState> {
 
   static const int _pageSize = 10;
 
-  Future<void> loadInitial({String? query}) async {
-    final nextQuery = query ?? state.query;
+  Future<void> loadInitial() async {
     emit(
       state.copyWith(
         isLoading: true,
@@ -17,13 +16,12 @@ class BlogsListCubit extends Cubit<BlogsListState> {
         hasMore: true,
         page: 0,
         items: const [],
-        query: nextQuery,
         errorMessage: null,
       ),
     );
 
     try {
-      final items = await _fetchPage(0, nextQuery);
+      final items = await _fetchPage(0);
       emit(
         state.copyWith(
           isLoading: false,
@@ -47,7 +45,7 @@ class BlogsListCubit extends Cubit<BlogsListState> {
     emit(state.copyWith(isLoadingMore: true, errorMessage: null));
 
     try {
-      final items = await _fetchPage(state.page, state.query);
+      final items = await _fetchPage(state.page);
       emit(
         state.copyWith(
           isLoadingMore: false,
@@ -70,14 +68,14 @@ class BlogsListCubit extends Cubit<BlogsListState> {
     if (query == state.query) {
       return;
     }
-    loadInitial(query: query);
+    emit(state.copyWith(query: query, errorMessage: null));
   }
 
-  Future<List<Map<String, dynamic>>> _fetchPage(int page, String query) async {
+  Future<List<Map<String, dynamic>>> _fetchPage(int page) async {
     final from = page * _pageSize;
     final to = from + _pageSize - 1;
 
-    var request = SupabaseConfig.client
+    final request = SupabaseConfig.client
         .from('blogs')
         .select(
           'id, title, excerpt, cover_images, published_at, created_at, '
@@ -85,14 +83,6 @@ class BlogsListCubit extends Cubit<BlogsListState> {
         )
         .eq('status', 'published')
         .eq('is_deleted', false);
-
-    final trimmed = query.trim();
-    if (trimmed.isNotEmpty) {
-      final sanitized = trimmed.replaceAll("'", "''");
-      request = request.or(
-        'title.ilike.%$sanitized%,excerpt.ilike.%$sanitized%',
-      );
-    }
 
     final rows = await request
         .order('published_at', ascending: false, nullsFirst: false)
