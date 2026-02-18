@@ -84,11 +84,13 @@ class _ProfileCompletionPageState extends State<ProfileCompletionPage> {
       sndpTempleName: _isSndpMember ? _sndpTempleController.text.trim() : null,
     );
 
-    if (context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Profile updated successfully!')),
-      );
+    if (!mounted) {
+      return;
     }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Profile updated successfully!')),
+    );
   }
 
   @override

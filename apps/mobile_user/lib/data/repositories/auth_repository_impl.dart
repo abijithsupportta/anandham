@@ -36,36 +36,52 @@ class AuthRepositoryImpl implements AuthRepository {
     required String fullName,
     required String email,
     required String password,
-    required String phoneCountryCode,
-    required String phoneNumber,
-    required String address,
-    required String houseName,
-    required String city,
-    required String stateName,
-    required String pincode,
-    required bool isSndpMember,
+    String? phoneCountryCode,
+    String? phoneNumber,
+    String? address,
+    String? houseName,
+    String? city,
+    String? stateName,
+    String? pincode,
+    bool isSndpMember = false,
     String? sndpUnionName,
     String? sndpBranchNumber,
     String? sndpTempleName,
   }) async {
     try {
+      final trimmedPhone = phoneNumber?.trim();
+      final trimmedAddress = address?.trim();
+      final trimmedHouse = houseName?.trim();
+      final trimmedCity = city?.trim();
+      final trimmedState = stateName?.trim();
+      final trimmedPincode = pincode?.trim();
+
       final response = await SupabaseAuthService.signUp(
         email: email,
         password: password,
         data: {
           'role': 'customer',
           'full_name': fullName,
-          'phone_country_code': phoneCountryCode,
-          'phone_number': phoneNumber,
-          'address': address,
-          'house_name': houseName,
-          'city': city,
-          'state': stateName,
-          'pincode': pincode,
+          if (trimmedPhone != null && trimmedPhone.isNotEmpty)
+            'phone_country_code': phoneCountryCode,
+          if (trimmedPhone != null && trimmedPhone.isNotEmpty)
+            'phone_number': trimmedPhone,
+          if (trimmedAddress != null && trimmedAddress.isNotEmpty)
+            'address': trimmedAddress,
+          if (trimmedHouse != null && trimmedHouse.isNotEmpty)
+            'house_name': trimmedHouse,
+          if (trimmedCity != null && trimmedCity.isNotEmpty) 'city': trimmedCity,
+          if (trimmedState != null && trimmedState.isNotEmpty)
+            'state': trimmedState,
+          if (trimmedPincode != null && trimmedPincode.isNotEmpty)
+            'pincode': trimmedPincode,
           'is_sndp_member': isSndpMember,
-          'sndp_union_name': isSndpMember ? sndpUnionName : null,
-          'sndp_branch_number': isSndpMember ? sndpBranchNumber : null,
-          'sndp_temple_name': isSndpMember ? sndpTempleName : null,
+          if (isSndpMember && sndpUnionName != null)
+            'sndp_union_name': sndpUnionName,
+          if (isSndpMember && sndpBranchNumber != null)
+            'sndp_branch_number': sndpBranchNumber,
+          if (isSndpMember && sndpTempleName != null)
+            'sndp_temple_name': sndpTempleName,
         },
       );
       final user = response.user;
@@ -75,22 +91,43 @@ class AuthRepositoryImpl implements AuthRepository {
         );
       }
 
+      final updatePayload = <String, dynamic>{
+        'full_name': fullName,
+        'is_sndp_member': isSndpMember,
+      };
+
+      if (trimmedPhone != null && trimmedPhone.isNotEmpty) {
+        updatePayload['phone_country_code'] = phoneCountryCode;
+        updatePayload['phone_number'] = trimmedPhone;
+      }
+      if (trimmedAddress != null && trimmedAddress.isNotEmpty) {
+        updatePayload['address'] = trimmedAddress;
+      }
+      if (trimmedHouse != null && trimmedHouse.isNotEmpty) {
+        updatePayload['house_name'] = trimmedHouse;
+      }
+      if (trimmedCity != null && trimmedCity.isNotEmpty) {
+        updatePayload['city'] = trimmedCity;
+      }
+      if (trimmedState != null && trimmedState.isNotEmpty) {
+        updatePayload['state'] = trimmedState;
+      }
+      if (trimmedPincode != null && trimmedPincode.isNotEmpty) {
+        updatePayload['pincode'] = trimmedPincode;
+      }
+      if (isSndpMember && sndpUnionName != null) {
+        updatePayload['sndp_union_name'] = sndpUnionName;
+      }
+      if (isSndpMember && sndpBranchNumber != null) {
+        updatePayload['sndp_branch_number'] = sndpBranchNumber;
+      }
+      if (isSndpMember && sndpTempleName != null) {
+        updatePayload['sndp_temple_name'] = sndpTempleName;
+      }
+
       await SupabaseConfig.client
           .from('profiles')
-          .update({
-            'full_name': fullName,
-            'phone_country_code': phoneCountryCode,
-            'phone_number': phoneNumber,
-            'address': address,
-            'house_name': houseName,
-            'city': city,
-            'state': stateName,
-            'pincode': pincode,
-            'is_sndp_member': isSndpMember,
-            'sndp_union_name': isSndpMember ? sndpUnionName : null,
-            'sndp_branch_number': isSndpMember ? sndpBranchNumber : null,
-            'sndp_temple_name': isSndpMember ? sndpTempleName : null,
-          })
+          .update(updatePayload)
           .eq('id', user.id);
 
       return Right(AppUser(id: user.id, email: user.email!));

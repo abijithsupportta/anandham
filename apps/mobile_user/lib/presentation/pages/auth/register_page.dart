@@ -66,17 +66,29 @@ class _RegisterPageState extends State<RegisterPage> {
       return;
     }
 
+    String? optionalValue(String value) {
+      final trimmed = value.trim();
+      return trimmed.isEmpty ? null : trimmed;
+    }
+
+    final phoneNumber = optionalValue(_phoneController.text);
+    final address = optionalValue(_addressController.text);
+    final houseName = optionalValue(_houseNameController.text);
+    final city = optionalValue(_cityController.text);
+    final stateName = optionalValue(_stateController.text);
+    final pincode = optionalValue(_pincodeController.text);
+
     await context.read<AuthCubit>().signUp(
       fullName: _fullNameController.text.trim(),
       email: _emailController.text.trim(),
       password: _passwordController.text,
-      phoneCountryCode: _selectedCountryCode,
-      phoneNumber: _phoneController.text.trim(),
-      address: _addressController.text.trim(),
-      houseName: _houseNameController.text.trim(),
-      city: _cityController.text.trim(),
-      stateName: _stateController.text.trim(),
-      pincode: _pincodeController.text.trim(),
+      phoneCountryCode: phoneNumber == null ? null : _selectedCountryCode,
+      phoneNumber: phoneNumber,
+      address: address,
+      houseName: houseName,
+      city: city,
+      stateName: stateName,
+      pincode: pincode,
       isSndpMember: _isSndpMember,
       sndpUnionName: _isSndpMember ? _sndpUnionController.text.trim() : null,
       sndpBranchNumber: _isSndpMember
@@ -191,7 +203,12 @@ class _RegisterPageState extends State<RegisterPage> {
                           decoration: const InputDecoration(
                             labelText: 'Phone number',
                           ),
-                          validator: Validators.phoneLocal,
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return null;
+                            }
+                            return Validators.phoneLocal(value);
+                          },
                         ),
                       ),
                     ],
@@ -208,8 +225,6 @@ class _RegisterPageState extends State<RegisterPage> {
                     controller: _houseNameController,
                     textInputAction: TextInputAction.next,
                     decoration: const InputDecoration(labelText: 'House name'),
-                    validator: (value) =>
-                        Validators.required(value, 'House name'),
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
@@ -217,21 +232,18 @@ class _RegisterPageState extends State<RegisterPage> {
                     textInputAction: TextInputAction.next,
                     maxLines: 2,
                     decoration: const InputDecoration(labelText: 'Address'),
-                    validator: (value) => Validators.required(value, 'Address'),
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: _cityController,
                     textInputAction: TextInputAction.next,
                     decoration: const InputDecoration(labelText: 'City'),
-                    validator: (value) => Validators.required(value, 'City'),
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: _stateController,
                     textInputAction: TextInputAction.next,
                     decoration: const InputDecoration(labelText: 'State'),
-                    validator: (value) => Validators.required(value, 'State'),
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
@@ -241,10 +253,15 @@ class _RegisterPageState extends State<RegisterPage> {
                     decoration: const InputDecoration(
                       labelText: 'Pincode / Postal code',
                     ),
-                    validator: (value) => Validators.pincode(
-                      value,
-                      countryCode: _selectedCountryCode,
-                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return null;
+                      }
+                      return Validators.pincode(
+                        value,
+                        countryCode: _selectedCountryCode,
+                      );
+                    },
                   ),
                   const SizedBox(height: 20),
                   Text(

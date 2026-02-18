@@ -49,7 +49,7 @@ class ProfileCompletionCubit extends Cubit<ProfileCompletionState> {
         return;
       }
 
-      final profileData = rows.first as Map<String, dynamic>;
+      final profileData = Map<String, dynamic>.from(rows.first);
       final missingFields = _calculateMissingFields(profileData);
       final completionPercentage = _calculateCompletion(profileData);
 
