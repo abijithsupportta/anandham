@@ -100,7 +100,7 @@ class _PhotosListPageState extends State<PhotosListPage> {
     }
   }
 
-  Future<void> _likePhoto(String photoId, String title) async {
+  Future<void> _likePhoto(String photoId) async {
     if (photoId.isEmpty) {
       return;
     }
@@ -160,15 +160,6 @@ class _PhotosListPageState extends State<PhotosListPage> {
       if (!mounted) {
         return;
       }
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            alreadyLiked ? 'Love removed from "$title"' : 'You loved "$title"',
-          ),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
     } catch (_) {
       if (!mounted) {
         return;
@@ -520,7 +511,7 @@ class _PhotosListPageState extends State<PhotosListPage> {
                                 child: ElevatedButton.icon(
                                   onPressed: photoId.isEmpty
                                       ? null
-                                      : () => _likePhoto(photoId, title),
+                                      : () => _likePhoto(photoId),
                                   icon: Icon(
                                     isLiked
                                         ? Icons.favorite
