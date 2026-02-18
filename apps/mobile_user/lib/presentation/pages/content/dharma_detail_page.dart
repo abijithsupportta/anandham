@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:anandham_user/presentation/blocs/dharmas/dharmas_state.dart';
 import 'package:anandham_user/presentation/blocs/dharmas/dharma_detail_cubit.dart';
@@ -42,13 +43,30 @@ class _DharmaDetailViewState extends State<_DharmaDetailView> {
   }
 
   Widget _sectionTitle(BuildContext context, String title) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Text(
-        title,
-        style: Theme.of(
-          context,
-        ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+    return Text(
+      title,
+      style: Theme.of(
+        context,
+      ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+    );
+  }
+
+  Widget _sectionCard(BuildContext context, String title, Widget child) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Theme.of(context).dividerColor),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _sectionTitle(context, title),
+          const SizedBox(height: 12),
+          child,
+        ],
       ),
     );
   }
@@ -58,13 +76,14 @@ class _DharmaDetailViewState extends State<_DharmaDetailView> {
       return const SizedBox.shrink();
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _sectionTitle(context, 'Slokas'),
-        ...widget.dharma.slokas.map((sloka) {
+    return _sectionCard(
+      context,
+      'Slokas',
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: widget.dharma.slokas.map((sloka) {
           return Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.only(bottom: 16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -73,7 +92,7 @@ class _DharmaDetailViewState extends State<_DharmaDetailView> {
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                     fontSize: _fontSize,
                     fontWeight: FontWeight.w600,
-                    height: 1.5,
+                    height: 1.6,
                   ),
                 ),
                 if (sloka.explanation.trim().isNotEmpty) ...[
@@ -83,15 +102,15 @@ class _DharmaDetailViewState extends State<_DharmaDetailView> {
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       fontSize: _fontSize,
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      height: 1.5,
+                      height: 1.6,
                     ),
                   ),
                 ],
               ],
             ),
           );
-        }),
-      ],
+        }).toList(),
+      ),
     );
   }
 
@@ -100,13 +119,14 @@ class _DharmaDetailViewState extends State<_DharmaDetailView> {
       return const SizedBox.shrink();
     }
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: Text(
+    return _sectionCard(
+      context,
+      'Overview',
+      Text(
         widget.dharma.description,
         style: Theme.of(
           context,
-        ).textTheme.bodyLarge?.copyWith(fontSize: _fontSize, height: 1.65),
+        ).textTheme.bodyLarge?.copyWith(fontSize: _fontSize, height: 1.7),
       ),
     );
   }
@@ -116,48 +136,42 @@ class _DharmaDetailViewState extends State<_DharmaDetailView> {
       return const SizedBox.shrink();
     }
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceContainerHigh,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Theme.of(context).dividerColor),
+    return _sectionCard(
+      context,
+      'Key Words',
+      Table(
+        columnWidths: const {0: FlexColumnWidth(2), 1: FlexColumnWidth(3)},
+        border: TableBorder.symmetric(
+          inside: BorderSide(color: Theme.of(context).dividerColor),
         ),
-        child: Table(
-          columnWidths: const {0: FlexColumnWidth(2), 1: FlexColumnWidth(3)},
-          border: TableBorder.symmetric(
-            inside: BorderSide(color: Theme.of(context).dividerColor),
-          ),
-          children: widget.dharma.words
-              .map(
-                (word) => TableRow(
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Text(
-                        word.word,
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          fontSize: _fontSize,
-                          fontWeight: FontWeight.w700,
-                        ),
+        children: widget.dharma.words
+            .map(
+              (word) => TableRow(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Text(
+                      word.word,
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        fontSize: _fontSize,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Text(
-                        word.meaning,
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          fontSize: _fontSize,
-                          height: 1.5,
-                        ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Text(
+                      word.meaning,
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        fontSize: _fontSize,
+                        height: 1.5,
                       ),
                     ),
-                  ],
-                ),
-              )
-              .toList(),
-        ),
+                  ),
+                ],
+              ),
+            )
+            .toList(),
       ),
     );
   }
@@ -167,13 +181,42 @@ class _DharmaDetailViewState extends State<_DharmaDetailView> {
       return const SizedBox.shrink();
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _sectionTitle(context, 'Translation'),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Container(
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Theme.of(context).dividerColor),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(child: _sectionTitle(context, 'Translation')),
+              IconButton(
+                icon: const Icon(Icons.copy_rounded),
+                tooltip: 'Copy translation',
+                onPressed: () async {
+                  await Clipboard.setData(
+                    ClipboardData(text: widget.dharma.translation),
+                  );
+                  if (!context.mounted) {
+                    return;
+                  }
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Translation copied'),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.primaryContainer,
@@ -192,8 +235,8 @@ class _DharmaDetailViewState extends State<_DharmaDetailView> {
               ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -224,32 +267,45 @@ class _DharmaDetailViewState extends State<_DharmaDetailView> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 10),
-              child: Text(
-                widget.dharma.title,
-                style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                  fontSize: _fontSize + 8,
-                  fontWeight: FontWeight.w800,
-                  height: 1.3,
-                ),
-              ),
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Theme.of(context).dividerColor),
             ),
-            const Divider(height: 1),
-            _slokasSection(context),
-            const Divider(height: 1),
-            _descriptionSection(context),
-            const Divider(height: 1),
-            _wordsSection(context),
-            const Divider(height: 1),
-            _translationSection(context),
-            const SizedBox(height: 32),
-          ],
-        ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.dharma.title,
+                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                    fontSize: _fontSize + 6,
+                    fontWeight: FontWeight.w800,
+                    height: 1.3,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    Chip(label: Text('${widget.dharma.slokas.length} Slokas')),
+                    Chip(label: Text('${widget.dharma.words.length} Words')),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          _descriptionSection(context),
+          _slokasSection(context),
+          _wordsSection(context),
+          _translationSection(context),
+        ],
       ),
     );
   }
