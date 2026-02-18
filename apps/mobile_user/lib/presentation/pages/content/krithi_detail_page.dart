@@ -225,7 +225,7 @@ class _KrithiDetailViewState extends State<_KrithiDetailView> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                if (_youtubeReady)
+                if (_youtubeReady) ...[
                   _sectionCard(
                     context,
                     'Video',
@@ -246,6 +246,8 @@ class _KrithiDetailViewState extends State<_KrithiDetailView> {
                       ),
                     ),
                   ),
+                  const SizedBox(height: 16),
+                ],
               ],
             ),
           ),
