@@ -11,8 +11,7 @@ class SupabaseConfig {
   SupabaseConfig._();
 
   // ── Project Credentials ──────────────────────────────────────────────
-  static const String _supabaseUrl =
-      'https://vksqkmtdysbzomrhlcqv.supabase.co';
+  static const String _supabaseUrl = 'https://vksqkmtdysbzomrhlcqv.supabase.co';
   static const String _supabaseAnonKey =
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.'
       'eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZrc3FrbXRkeXNiem9tcmhsY3F2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEzMTcwNzMsImV4cCI6MjA4Njg5MzA3M30.'

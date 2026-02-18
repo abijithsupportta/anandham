@@ -42,7 +42,9 @@ class SavedCubit extends Cubit<SavedState> {
           .select('id, title, description, youtube_url')
           .inFilter('id', savedIds)
           .eq('status', 'published')
-          .eq('is_deleted', false);
+          .eq('is_deleted', false)
+          .order('display_order', ascending: true, nullsFirst: false)
+          .order('created_at', ascending: false);
 
       final items = (rows as List<dynamic>)
           .map((item) => item as Map<String, dynamic>)

@@ -15,6 +15,7 @@ class KrithisListCubit extends Cubit<KrithisListState> {
           .select('id, title, description, youtube_url')
           .eq('status', 'published')
           .eq('is_deleted', false)
+          .order('display_order', ascending: true, nullsFirst: false)
           .order('created_at', ascending: false);
 
       final items = (rows as List<dynamic>)
