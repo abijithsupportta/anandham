@@ -15,10 +15,11 @@ class Validators {
     if (value == null || value.trim().isEmpty) {
       return 'Email is required';
     }
+    final trimmed = value.trim();
     final emailRegex = RegExp(
       r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
     );
-    if (!emailRegex.hasMatch(value)) {
+    if (!emailRegex.hasMatch(trimmed)) {
       return 'Please enter a valid email address';
     }
     return null;

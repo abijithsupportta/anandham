@@ -31,6 +31,8 @@ class _SavedViewState extends State<_SavedView>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _tabController = TabController(length: 2, vsync: this);
+    context.read<SavedCubit>().loadSaved();
+    context.read<KeerthanamSavedCubit>().loadSaved();
   }
 
   @override
@@ -56,47 +58,32 @@ class _SavedViewState extends State<_SavedView>
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Saved',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Your bookmarked items, ready to revisit.',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
               child: Container(
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(999),
                   border: Border.all(color: Theme.of(context).dividerColor),
                 ),
                 child: TabBar(
                   controller: _tabController,
                   labelColor: Theme.of(context).colorScheme.onPrimaryContainer,
-                  unselectedLabelColor:
-                      Theme.of(context).colorScheme.onSurfaceVariant,
+                  unselectedLabelColor: Theme.of(
+                    context,
+                  ).colorScheme.onSurfaceVariant,
+                  labelStyle: Theme.of(
+                    context,
+                  ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
                   indicator: BoxDecoration(
                     color: Theme.of(context).colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(999),
                   ),
+                  indicatorSize: TabBarIndicatorSize.tab,
+                  dividerColor: Colors.transparent,
                   tabs: const [
-                    Tab(icon: Icon(Icons.book), text: 'Krithis'),
-                    Tab(icon: Icon(Icons.music_note), text: 'Keerthanams'),
+                    Tab(text: 'Krithis'),
+                    Tab(text: 'Keerthanams'),
                   ],
                 ),
               ),
@@ -130,6 +117,9 @@ class _SavedViewState extends State<_SavedView>
                         state.items,
                         RouteNames.krithiDetail,
                         (id) => context.read<SavedCubit>().removeSaved(id),
+                        onReorder: (oldIndex, newIndex) => context
+                            .read<SavedCubit>()
+                            .reorderSaved(oldIndex, newIndex),
                       );
                     },
                   ),
@@ -161,6 +151,9 @@ class _SavedViewState extends State<_SavedView>
                         (id) => context
                             .read<KeerthanamSavedCubit>()
                             .removeSaved(id),
+                        onReorder: (oldIndex, newIndex) => context
+                            .read<KeerthanamSavedCubit>()
+                            .reorderSaved(oldIndex, newIndex),
                         showAuthor: true,
                       );
                     },
@@ -194,9 +187,9 @@ class _SavedViewState extends State<_SavedView>
             const SizedBox(height: 12),
             Text(
               title,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 6),
@@ -218,92 +211,126 @@ class _SavedViewState extends State<_SavedView>
     List<Map<String, dynamic>> items,
     String detailRoute,
     Function(String) onRemove, {
+    required void Function(int oldIndex, int newIndex) onReorder,
     bool showAuthor = false,
   }) {
-    return ListView.separated(
+    return ReorderableListView.builder(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+      buildDefaultDragHandles: false,
+      onReorder: onReorder,
       itemCount: items.length,
-      separatorBuilder: (context, index) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final item = items[index];
         final id = item['id'] as String;
         final title = (item['title'] as String?) ?? '';
         final author = (item['author_name'] as String?) ?? '';
+        final priority = index + 1;
 
-        return InkWell(
-          onTap: () async {
-            await Navigator.pushNamed(context, detailRoute, arguments: item);
-            if (!context.mounted) {
-              return;
-            }
-            if (detailRoute == RouteNames.krithiDetail) {
-              await context.read<SavedCubit>().loadSaved();
-            } else {
-              await context.read<KeerthanamSavedCubit>().loadSaved();
-            }
-          },
-          borderRadius: BorderRadius.circular(16),
+        return ReorderableDelayedDragStartListener(
+          key: ValueKey('saved_$id'),
+          index: index,
           child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
+            margin: EdgeInsets.only(bottom: index == items.length - 1 ? 0 : 12),
+            child: InkWell(
+              onTap: () async {
+                await Navigator.pushNamed(
+                  context,
+                  detailRoute,
+                  arguments: item,
+                );
+                if (!context.mounted) {
+                  return;
+                }
+                if (detailRoute == RouteNames.krithiDetail) {
+                  await context.read<SavedCubit>().loadSaved();
+                } else {
+                  await context.read<KeerthanamSavedCubit>().loadSaved();
+                }
+              },
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Theme.of(context).dividerColor),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.04),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Theme.of(context).dividerColor),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.04),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title.length > 50
-                            ? '${title.substring(0, 50)}...'
-                            : title,
-                        style: Theme.of(context).textTheme.headlineSmall
+                child: Row(
+                  children: [
+                    Container(
+                      width: 28,
+                      height: 28,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.primaryContainer,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Text(
+                        '$priority',
+                        style: Theme.of(context).textTheme.labelMedium
                             ?.copyWith(
                               fontWeight: FontWeight.w700,
-                              fontSize: 20,
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.onPrimaryContainer,
                             ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
                       ),
-                      if (showAuthor && author.isNotEmpty) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          author,
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSurfaceVariant,
-                              ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ],
-                  ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title.length > 50
+                                ? '${title.substring(0, 50)}...'
+                                : title,
+                            style: Theme.of(context).textTheme.headlineSmall
+                                ?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 20,
+                                ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          if (showAuthor && author.isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            Text(
+                              author,
+                              style: Theme.of(context).textTheme.bodySmall
+                                  ?.copyWith(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurfaceVariant,
+                                  ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton(
+                      onPressed: () async {
+                        await onRemove(id);
+                      },
+                      icon: Icon(
+                        Icons.bookmark,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      tooltip: 'Remove',
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 12),
-                IconButton(
-                  onPressed: () async {
-                    await onRemove(id);
-                  },
-                  icon: Icon(
-                    Icons.bookmark,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                  tooltip: 'Remove',
-                ),
-              ],
+              ),
             ),
           ),
         );

@@ -30,6 +30,7 @@ class _ProfilePageState extends State<ProfilePage> {
   bool _isSndpMember = false;
   bool _isLoading = true;
   bool _isSaving = false;
+  Set<String> _availableProfileColumns = const {};
 
   static const Map<String, String> _countryCodeMap = {
     'India': '+91',
@@ -80,15 +81,16 @@ class _ProfilePageState extends State<ProfilePage> {
 
       final List<dynamic> rows = await SupabaseConfig.client
           .from('profiles')
-          .select(
-            'full_name, phone_country_code, phone_number, house_name, city, state, is_sndp_member, sndp_union_name, sndp_branch_number, sndp_temple_name',
-          )
+          .select()
           .eq('id', user.id)
           .limit(1);
 
       final profile = rows.isNotEmpty
           ? rows.first as Map<String, dynamic>
           : <String, dynamic>{};
+      _availableProfileColumns = profile.keys
+          .map((key) => key.toString())
+          .toSet();
 
       _fullNameController.text = (profile['full_name'] as String?) ?? '';
       _selectedCountryCode =
@@ -144,27 +146,48 @@ class _ProfilePageState extends State<ProfilePage> {
     });
 
     try {
-      await SupabaseConfig.client
-          .from('profiles')
-          .update({
-            'full_name': _fullNameController.text.trim(),
-            'phone_country_code': _selectedCountryCode,
-            'phone_number': _phoneController.text.trim(),
-            'house_name': _houseNameController.text.trim(),
-            'city': _cityController.text.trim(),
-            'state': _stateController.text.trim(),
-            'is_sndp_member': _isSndpMember,
-            'sndp_union_name': _isSndpMember
-                ? _sndpUnionController.text.trim()
-                : null,
-            'sndp_branch_number': _isSndpMember
-                ? _sndpBranchController.text.trim()
-                : null,
-            'sndp_temple_name': _isSndpMember
-                ? _sndpTempleController.text.trim()
-                : null,
-          })
-          .eq('id', user.id);
+      final payload = <String, dynamic>{
+        'full_name': _fullNameController.text.trim(),
+        'phone_country_code': _selectedCountryCode,
+        'phone_number': _phoneController.text.trim(),
+        'house_name': _houseNameController.text.trim(),
+        'city': _cityController.text.trim(),
+        'state': _stateController.text.trim(),
+        'is_sndp_member': _isSndpMember,
+        'sndp_union_name': _isSndpMember
+            ? _sndpUnionController.text.trim()
+            : null,
+        'sndp_branch_number': _isSndpMember
+            ? _sndpBranchController.text.trim()
+            : null,
+        'sndp_temple_name': _isSndpMember
+            ? _sndpTempleController.text.trim()
+            : null,
+      };
+
+      final filteredPayload = _availableProfileColumns.isEmpty
+          ? payload
+          : Map<String, dynamic>.fromEntries(
+              payload.entries.where(
+                (entry) => _availableProfileColumns.contains(entry.key),
+              ),
+            );
+
+      try {
+        await SupabaseConfig.client
+            .from('profiles')
+            .update(
+              filteredPayload.isEmpty
+                  ? {'full_name': _fullNameController.text.trim()}
+                  : filteredPayload,
+            )
+            .eq('id', user.id);
+      } catch (_) {
+        await SupabaseConfig.client
+            .from('profiles')
+            .update({'full_name': _fullNameController.text.trim()})
+            .eq('id', user.id);
+      }
 
       if (!mounted) {
         return;

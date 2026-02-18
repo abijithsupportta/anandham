@@ -39,9 +39,15 @@ class _LoginPageState extends State<LoginPage> {
         }
 
         if (state.status == AuthStatus.error && state.errorMessage != null) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(state.errorMessage!)));
+          final messenger = ScaffoldMessenger.of(context);
+          messenger
+            ..hideCurrentSnackBar()
+            ..showSnackBar(
+              SnackBar(
+                content: Text(state.errorMessage!),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
         }
       },
       child: Scaffold(

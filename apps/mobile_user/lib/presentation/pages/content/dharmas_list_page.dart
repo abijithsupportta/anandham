@@ -1,103 +1,169 @@
 import 'package:flutter/material.dart';
-import 'package:anandham_core/anandham_core.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:anandham_user/app/routes/route_names.dart';
+import 'package:anandham_user/presentation/blocs/dharmas/dharmas_cubit.dart';
+import 'package:anandham_user/presentation/blocs/dharmas/dharmas_state.dart';
 
 class DharmasListPage extends StatelessWidget {
   const DharmasListPage({super.key});
 
-  Future<List<Map<String, dynamic>>> _loadDharmas() async {
-    final rows = await SupabaseConfig.client
-        .from('dharmas')
-        .select('id, title, description')
-        .eq('status', 'published')
-        .eq('is_deleted', false)
-        .order('created_at', ascending: false);
-
-    return (rows as List<dynamic>)
-        .map((item) => item as Map<String, dynamic>)
-        .toList();
-  }
-
-  Widget _sectionCard(
-    BuildContext context, {
-    required String title,
-    required String subtitle,
-    required List<Map<String, dynamic>> items,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Theme.of(context).dividerColor),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
-          ),
-          const SizedBox(height: 4),
-          Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
-          const SizedBox(height: 12),
-          if (items.isEmpty)
-            const Text('No items available')
-          else
-            ...items.map((item) {
-              final itemTitle = (item['title'] as String?) ?? '';
-              final itemDescription = (item['description'] as String?) ?? '';
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      itemTitle,
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    if (itemDescription.trim().isNotEmpty)
-                      Text(
-                        itemDescription,
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                  ],
-                ),
-              );
-            }),
-        ],
-      ),
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (_) => DharmasCubit()..loadDharmas(),
+      child: const _DharmasListView(),
     );
+  }
+}
+
+class _DharmasListView extends StatefulWidget {
+  const _DharmasListView();
+
+  @override
+  State<_DharmasListView> createState() => _DharmasListViewState();
+}
+
+class _DharmasListViewState extends State<_DharmasListView> {
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('ശ്രീനാരായണ ധർമ്മം')),
-      body: FutureBuilder<List<Map<String, dynamic>>>(
-        future: _loadDharmas(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
+      body: BlocBuilder<DharmasCubit, DharmasState>(
+        builder: (context, state) {
+          if (state.isLoading) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          if (snapshot.hasError) {
-            return const Center(child: Text('Failed to load dharmam data'));
+          if (state.errorMessage != null) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text('Failed to load dharmas'),
+                    const SizedBox(height: 8),
+                    Text(
+                      state.errorMessage!,
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+            );
           }
 
-          final dharmas = snapshot.data ?? const [];
+          final query = _searchController.text.trim().toLowerCase();
+          final filtered = state.items.where((item) {
+            if (query.isEmpty) {
+              return true;
+            }
+            final title = item.title.toLowerCase();
+            final description = item.description.toLowerCase();
+            return title.contains(query) || description.contains(query);
+          }).toList();
 
-          return ListView(
-            padding: const EdgeInsets.all(16),
+          return Column(
             children: [
-              _sectionCard(
-                context,
-                title: 'ശ്രീനാരായണ ധർമ്മം',
-                subtitle: 'Dharmas and teachings',
-                items: dharmas,
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: TextField(
+                  controller: _searchController,
+                  onChanged: (_) => setState(() {}),
+                  decoration: InputDecoration(
+                    hintText: 'Search dharmas...',
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: _searchController.text.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: () {
+                              _searchController.clear();
+                              setState(() {});
+                            },
+                          )
+                        : null,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: filtered.isEmpty
+                    ? Center(
+                        child: Text(
+                          query.isEmpty
+                              ? 'No dharmas available'
+                              : 'No dharmas found',
+                        ),
+                      )
+                    : ListView.separated(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: filtered.length,
+                        separatorBuilder: (context, index) =>
+                            const SizedBox(height: 12),
+                        itemBuilder: (context, index) {
+                          final item = filtered[index];
+
+                          return InkWell(
+                            onTap: () async {
+                              await Navigator.pushNamed(
+                                context,
+                                RouteNames.dharmaDetail,
+                                arguments: item,
+                              );
+                            },
+                            borderRadius: BorderRadius.circular(16),
+                            child: Container(
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.surface,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: Theme.of(context).dividerColor,
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      item.title.length > 50
+                                          ? '${item.title.substring(0, 50)}...'
+                                          : item.title,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .headlineSmall
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w700,
+                                            fontSize: 20,
+                                          ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Icon(
+                                    Icons.arrow_forward_ios,
+                                    size: 18,
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.onSurfaceVariant,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
               ),
             ],
           );

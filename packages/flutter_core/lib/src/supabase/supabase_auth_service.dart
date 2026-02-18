@@ -154,7 +154,11 @@ class SupabaseAuthService {
       await _auth.signOut();
     } catch (e) {
       debugPrint('[SupabaseAuthService] signOut error: $e');
-      rethrow;
+      try {
+        await _auth.signOut(scope: SignOutScope.local);
+      } catch (_) {
+        rethrow;
+      }
     }
   }
 

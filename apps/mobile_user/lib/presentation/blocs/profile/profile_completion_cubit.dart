@@ -138,10 +138,23 @@ class ProfileCompletionCubit extends Cubit<ProfileCompletionState> {
         updateData['sndp_temple_name'] = sndpTempleName;
       }
 
-      await SupabaseConfig.client
-          .from('profiles')
-          .update(updateData)
-          .eq('id', user.id);
+      try {
+        await SupabaseConfig.client
+            .from('profiles')
+            .update(updateData)
+            .eq('id', user.id);
+      } catch (_) {
+        final fallback = <String, dynamic>{};
+        if (fullName != null) {
+          fallback['full_name'] = fullName;
+        }
+        if (fallback.isNotEmpty) {
+          await SupabaseConfig.client
+              .from('profiles')
+              .update(fallback)
+              .eq('id', user.id);
+        }
+      }
 
       await loadProfileCompletion();
     } catch (e) {

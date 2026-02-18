@@ -72,14 +72,27 @@ class _MainShellPageState extends State<MainShellPage> {
                       return;
                     }
 
-                    if (innerContext.read<AuthCubit>().state.status ==
-                        AuthStatus.unauthenticated) {
+                    final authState = innerContext.read<AuthCubit>().state;
+
+                    if (authState.status == AuthStatus.unauthenticated) {
                       await Navigator.pushNamedAndRemoveUntil(
                         innerContext,
                         RouteNames.login,
                         (route) => false,
                       );
+                      return;
                     }
+
+                    final errorMessage = authState.errorMessage;
+                    ScaffoldMessenger.of(innerContext).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          errorMessage ??
+                              'Unable to sign out right now. Please try again.',
+                        ),
+                        behavior: SnackBarBehavior.floating,
+                      ),
+                    );
                   },
                 ),
               ),

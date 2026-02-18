@@ -5,8 +5,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:anandham_core/anandham_core.dart' hide ApiClient;
 import 'package:anandham_user/core/network/api_client.dart';
 import 'package:anandham_user/core/network/network_info.dart';
+import 'package:anandham_user/data/local/db/app_database.dart';
 import 'package:anandham_user/data/datasources/local/local_data_source.dart';
+import 'package:anandham_user/data/repositories/local_content_repository.dart';
 import 'package:anandham_user/data/repositories/auth_repository_impl.dart';
+import 'package:anandham_user/data/services/content_sync_service.dart';
 import 'package:anandham_user/domain/repositories/auth_repository.dart';
 import 'package:anandham_user/domain/usecases/get_current_user_usecase.dart';
 import 'package:anandham_user/domain/usecases/sign_in_usecase.dart';
@@ -54,6 +57,9 @@ Future<void> init() async {
   // Repositories
   //============================================================
   sl.registerLazySingleton<AuthRepository>(() => AuthRepositoryImpl());
+  sl.registerLazySingleton(() => AppDatabase());
+  sl.registerLazySingleton(() => LocalContentRepository(sl<AppDatabase>()));
+  sl.registerLazySingleton(() => ContentSyncService(sl<AppDatabase>()));
 
   //============================================================
   // Use Cases

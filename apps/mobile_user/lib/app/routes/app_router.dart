@@ -11,9 +11,11 @@ import 'package:anandham_user/presentation/pages/splash/splash_page.dart';
 import 'package:anandham_user/presentation/pages/content/krithis_list_page.dart';
 import 'package:anandham_user/presentation/pages/content/krithi_detail_page.dart';
 import 'package:anandham_user/presentation/pages/content/dharmas_list_page.dart';
+import 'package:anandham_user/presentation/pages/content/dharma_detail_page.dart';
 import 'package:anandham_user/presentation/pages/content/keerthanams_list_page.dart';
 import 'package:anandham_user/presentation/pages/content/keerthanam_detail_page.dart';
 import 'package:anandham_user/presentation/pages/content/photos_list_page.dart';
+import 'package:anandham_user/presentation/blocs/dharmas/dharmas_state.dart';
 
 class AppRouter {
   AppRouter._();
@@ -65,6 +67,12 @@ class AppRouter {
       case RouteNames.dharmasList:
         return MaterialPageRoute(
           builder: (_) => const DharmasListPage(),
+          settings: settings,
+        );
+      case RouteNames.dharmaDetail:
+        final dharma = settings.arguments as DharmaItemView;
+        return MaterialPageRoute(
+          builder: (_) => DharmaDetailPage(dharma: dharma),
           settings: settings,
         );
       case RouteNames.keerthanamsList:
