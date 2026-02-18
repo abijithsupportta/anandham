@@ -13,4 +13,5 @@ class RouteNames {
   static const String keerthanamsList = '/content/keerthanams';
   static const String keerthanamDetail = '/content/keerthanams/detail';
   static const String photosList = '/content/photos';
+  static const String blogDetail = '/blogs/detail';
 }

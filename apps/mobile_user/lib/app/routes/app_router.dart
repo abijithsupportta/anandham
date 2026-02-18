@@ -15,6 +15,7 @@ import 'package:anandham_user/presentation/pages/content/dharma_detail_page.dart
 import 'package:anandham_user/presentation/pages/content/keerthanams_list_page.dart';
 import 'package:anandham_user/presentation/pages/content/keerthanam_detail_page.dart';
 import 'package:anandham_user/presentation/pages/content/photos_list_page.dart';
+import 'package:anandham_user/presentation/pages/blogs/blog_detail_page.dart';
 import 'package:anandham_user/presentation/blocs/dharmas/dharmas_state.dart';
 
 class AppRouter {
@@ -89,6 +90,12 @@ class AppRouter {
       case RouteNames.photosList:
         return MaterialPageRoute(
           builder: (_) => const PhotosListPage(),
+          settings: settings,
+        );
+      case RouteNames.blogDetail:
+        final blogId = settings.arguments as String? ?? '';
+        return MaterialPageRoute(
+          builder: (_) => BlogDetailPage(blogId: blogId),
           settings: settings,
         );
       default:

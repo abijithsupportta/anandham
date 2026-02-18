@@ -1,10 +1,11 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:anandham_user/core/utils/helpers.dart';
+import 'package:anandham_user/app/routes/route_names.dart';
 import 'package:anandham_user/presentation/blocs/blogs/blogs_list_cubit.dart';
 import 'package:anandham_user/presentation/blocs/blogs/blogs_list_state.dart';
+import 'package:anandham_user/presentation/pages/blogs/widgets/blog_list_item.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class BlogsPage extends StatelessWidget {
   const BlogsPage({super.key});
@@ -66,46 +67,16 @@ class _BlogsListViewState extends State<_BlogsListView> {
     super.dispose();
   }
 
-  String _coverImageUrl(Map<String, dynamic> item) {
-    final raw = item['cover_images'];
-    if (raw is List) {
-      for (final image in raw) {
-        if (image is String && image.trim().isNotEmpty) {
-          return image;
-        }
-      }
-    }
-    return '';
-  }
-
-  String _excerptText(String excerpt) {
-    final trimmed = excerpt.trim();
-    if (trimmed.isEmpty) {
-      return 'No summary available.';
-    }
-    if (trimmed.length <= 140) {
-      return trimmed;
-    }
-    return '${trimmed.substring(0, 140)}...';
-  }
-
-  String _formatDate(dynamic value) {
-    if (value is String) {
-      final parsed = DateTime.tryParse(value);
-      if (parsed != null) {
-        return Helpers.formatDate(parsed, pattern: 'dd MMM yyyy');
-      }
-    }
-    if (value is DateTime) {
-      return Helpers.formatDate(value, pattern: 'dd MMM yyyy');
-    }
-    return '';
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Blogs')),
+      appBar: AppBar(
+        title: const Text('Blogs'),
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        surfaceTintColor: Colors.transparent,
+        scrolledUnderElevation: 0,
+        elevation: 0,
+      ),
       body: BlocBuilder<BlogsListCubit, BlogsListState>(
         builder: (context, state) {
           if (state.isLoading && state.items.isEmpty) {
@@ -192,141 +163,19 @@ class _BlogsListViewState extends State<_BlogsListView> {
                           }
 
                           final item = items[index];
-                          final title = (item['title'] as String?) ?? '';
-                          final excerpt = (item['excerpt'] as String?) ?? '';
-                          final author =
-                              item['author'] as Map<String, dynamic>?;
-                          final authorName = (author?['name'] as String?) ?? '';
-                          final coverUrl = _coverImageUrl(item);
-                          final publishedAt =
-                              item['published_at'] ?? item['created_at'];
-                          final formattedDate = _formatDate(publishedAt);
+                          final blogId = (item['id'] as String?) ?? '';
 
-                          return Container(
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.surface,
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: Theme.of(context).dividerColor,
-                              ),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                ClipRRect(
-                                  borderRadius: const BorderRadius.vertical(
-                                    top: Radius.circular(16),
-                                  ),
-                                  child: AspectRatio(
-                                    aspectRatio: 16 / 9,
-                                    child: coverUrl.isEmpty
-                                        ? Container(
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .surfaceContainerHighest,
-                                            child: Icon(
-                                              Icons.image_outlined,
-                                              size: 40,
-                                              color: Theme.of(
-                                                context,
-                                              ).colorScheme.onSurfaceVariant,
-                                            ),
-                                          )
-                                        : Image.network(
-                                            coverUrl,
-                                            fit: BoxFit.cover,
-                                            errorBuilder:
-                                                (
-                                                  context,
-                                                  error,
-                                                  stackTrace,
-                                                ) => Container(
-                                                  color: Theme.of(context)
-                                                      .colorScheme
-                                                      .surfaceContainerHighest,
-                                                  child: Icon(
-                                                    Icons.broken_image_outlined,
-                                                    size: 40,
-                                                    color: Theme.of(context)
-                                                        .colorScheme
-                                                        .onSurfaceVariant,
-                                                  ),
-                                                ),
-                                          ),
-                                  ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.all(16),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        title,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .titleLarge
-                                            ?.copyWith(
-                                              fontWeight: FontWeight.w800,
-                                            ),
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Row(
-                                        children: [
-                                          if (authorName.trim().isNotEmpty)
-                                            Expanded(
-                                              child: Text(
-                                                authorName,
-                                                style: Theme.of(context)
-                                                    .textTheme
-                                                    .bodySmall
-                                                    ?.copyWith(
-                                                      color: Theme.of(context)
-                                                          .colorScheme
-                                                          .onSurfaceVariant,
-                                                      fontWeight:
-                                                          FontWeight.w600,
-                                                    ),
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                              ),
-                                            )
-                                          else
-                                            const SizedBox.shrink(),
-                                          if (formattedDate.isNotEmpty) ...[
-                                            if (authorName.trim().isNotEmpty)
-                                              const SizedBox(width: 8),
-                                            Text(
-                                              formattedDate,
-                                              style: Theme.of(context)
-                                                  .textTheme
-                                                  .bodySmall
-                                                  ?.copyWith(
-                                                    color: Theme.of(context)
-                                                        .colorScheme
-                                                        .onSurfaceVariant,
-                                                  ),
-                                            ),
-                                          ],
-                                        ],
-                                      ),
-                                      const SizedBox(height: 12),
-                                      Text(
-                                        _excerptText(excerpt),
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyMedium
-                                            ?.copyWith(height: 1.6),
-                                        maxLines: 3,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
+                          return BlogListItem(
+                            item: item,
+                            onTap: blogId.trim().isEmpty
+                                ? () {}
+                                : () async {
+                                    await Navigator.pushNamed(
+                                      context,
+                                      RouteNames.blogDetail,
+                                      arguments: blogId,
+                                    );
+                                  },
                           );
                         },
                       ),

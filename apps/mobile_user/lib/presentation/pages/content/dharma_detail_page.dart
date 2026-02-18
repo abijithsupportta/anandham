@@ -288,15 +288,6 @@ class _DharmaDetailViewState extends State<_DharmaDetailView> {
                     height: 1.3,
                   ),
                 ),
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    Chip(label: Text('${widget.dharma.slokas.length} Slokas')),
-                    Chip(label: Text('${widget.dharma.words.length} Words')),
-                  ],
-                ),
               ],
             ),
           ),
