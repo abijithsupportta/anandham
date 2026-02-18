@@ -1,10 +1,10 @@
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:anandham_user/core/utils/extensions.dart';
 import 'package:anandham_user/core/utils/helpers.dart';
 import 'package:anandham_user/presentation/blocs/blogs/blog_detail_cubit.dart';
 import 'package:anandham_user/presentation/blocs/blogs/blog_detail_state.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
 class BlogDetailPage extends StatelessWidget {
   final String blogId;
@@ -20,21 +20,67 @@ class BlogDetailPage extends StatelessWidget {
   }
 }
 
-class _BlogDetailView extends StatelessWidget {
+class _BlogDetailView extends StatefulWidget {
   final String blogId;
 
   const _BlogDetailView({required this.blogId});
 
-  String _coverImageUrl(Map<String, dynamic> item) {
-    final raw = item['cover_images'];
-    if (raw is List) {
-      for (final image in raw) {
-        if (image is String && image.trim().isNotEmpty) {
-          return image;
-        }
-      }
+  @override
+  State<_BlogDetailView> createState() => _BlogDetailViewState();
+}
+
+class _BlogDetailViewState extends State<_BlogDetailView> {
+  final PageController _mediaPageController = PageController();
+
+  YoutubePlayerController? _youtubeController;
+  String? _youtubeVideoId;
+  int _currentMediaIndex = 0;
+
+  @override
+  void dispose() {
+    _mediaPageController.dispose();
+    _youtubeController?.dispose();
+    super.dispose();
+  }
+
+  void _configureYoutube(String rawUrl) {
+    final trimmed = rawUrl.trim();
+    final resolvedVideoId =
+        YoutubePlayer.convertUrlToId(trimmed) ??
+        (trimmed.isNotEmpty ? trimmed : null);
+
+    if (_youtubeVideoId == resolvedVideoId) {
+      return;
     }
-    return '';
+
+    _youtubeController?.dispose();
+    _youtubeController = null;
+    _youtubeVideoId = null;
+
+    if (resolvedVideoId != null && resolvedVideoId.isNotEmpty) {
+      _youtubeController = YoutubePlayerController(
+        initialVideoId: resolvedVideoId,
+        flags: const YoutubePlayerFlags(
+          autoPlay: false,
+          mute: false,
+          disableDragSeek: false,
+        ),
+      );
+      _youtubeVideoId = resolvedVideoId;
+    }
+  }
+
+  List<String> _coverImages(Map<String, dynamic> blog) {
+    final raw = blog['cover_images'];
+    if (raw is! List) {
+      return const [];
+    }
+
+    return raw
+        .whereType<String>()
+        .map((item) => item.trim())
+        .where((item) => item.isNotEmpty)
+        .toList();
   }
 
   DateTime? _parseDate(dynamic value) {
@@ -60,30 +106,132 @@ class _BlogDetailView extends StatelessWidget {
     return '';
   }
 
-  String _copyPayload(
-    String title,
-    String authorName,
-    String body,
-    String excerpt,
-  ) {
-    final buffer = StringBuffer()..writeln(title);
-    if (authorName.trim().isNotEmpty) {
-      buffer.writeln(authorName);
+  Widget _imageSlide(BuildContext context, String imageUrl) {
+    return Image.network(
+      imageUrl,
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) {
+        return Container(
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          child: Icon(
+            Icons.broken_image_outlined,
+            size: 40,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _youtubeSlide(BuildContext context) {
+    if (_youtubeController == null) {
+      return Container(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        child: Icon(
+          Icons.play_circle_outline,
+          size: 40,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
+      );
     }
-    final content = body.trim().isNotEmpty ? body : excerpt;
-    if (content.trim().isNotEmpty) {
-      buffer
-        ..writeln('')
-        ..writeln(content.trim());
+
+    return Container(
+      color: Colors.black,
+      child: YoutubePlayer(
+        controller: _youtubeController!,
+        showVideoProgressIndicator: true,
+        bottomActions: const [
+          CurrentPosition(),
+          SizedBox(width: 8),
+          ProgressBar(isExpanded: true),
+          SizedBox(width: 8),
+          RemainingDuration(),
+          PlaybackSpeedButton(),
+        ],
+      ),
+    );
+  }
+
+  Widget _mediaCarousel(BuildContext context, Map<String, dynamic> blog) {
+    final images = _coverImages(blog);
+    final hasYoutube = _youtubeController != null;
+    final totalItems = images.length + (hasYoutube ? 1 : 0);
+
+    if (totalItems == 0) {
+      return Container(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        child: Icon(
+          Icons.image_outlined,
+          size: 40,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
+      );
     }
-    return buffer.toString().trimRight();
+
+    final youtubeIndex = images.length;
+
+    if (_currentMediaIndex >= totalItems) {
+      _currentMediaIndex = totalItems - 1;
+    }
+
+    return Column(
+      children: [
+        Expanded(
+          child: PageView.builder(
+            controller: _mediaPageController,
+            itemCount: totalItems,
+            onPageChanged: (index) {
+              setState(() {
+                _currentMediaIndex = index;
+              });
+            },
+            itemBuilder: (context, index) {
+              if (hasYoutube && index == youtubeIndex) {
+                return _youtubeSlide(context);
+              }
+              return _imageSlide(context, images[index]);
+            },
+          ),
+        ),
+        if (totalItems > 1)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 6,
+              children: List.generate(totalItems, (index) {
+                final selected = index == _currentMediaIndex;
+                return AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  width: selected ? 16 : 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: selected
+                        ? Theme.of(context).colorScheme.primary
+                        : Theme.of(context).colorScheme.outlineVariant,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                );
+              }),
+            ),
+          ),
+      ],
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Blog')),
-      body: BlocBuilder<BlogDetailCubit, BlogDetailState>(
+      body: BlocConsumer<BlogDetailCubit, BlogDetailState>(
+        listener: (context, state) {
+          final blog = state.blog;
+          if (blog == null) {
+            return;
+          }
+          final youtubeUrl = (blog['youtube_url'] as String? ?? '').trim();
+          _configureYoutube(youtubeUrl);
+        },
         builder: (context, state) {
           if (state.isLoading) {
             return const Center(child: CircularProgressIndicator());
@@ -105,8 +253,9 @@ class _BlogDetailView extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                     OutlinedButton(
-                      onPressed: () =>
-                          context.read<BlogDetailCubit>().loadBlog(blogId),
+                      onPressed: () => context.read<BlogDetailCubit>().loadBlog(
+                        widget.blogId,
+                      ),
                       child: const Text('Retry'),
                     ),
                   ],
@@ -121,12 +270,10 @@ class _BlogDetailView extends StatelessWidget {
           final body = (blog['body'] as String?) ?? '';
           final author = blog['author'] as Map<String, dynamic>?;
           final authorName = (author?['name'] as String?) ?? '';
-          final coverUrl = _coverImageUrl(blog);
           final publishedAt = blog['published_at'] ?? blog['created_at'];
           final formattedDate = _formatDate(publishedAt);
           final postedAt = _parseDate(publishedAt);
           final timeAgo = postedAt?.timeAgo ?? '';
-          final copyPayload = _copyPayload(title, authorName, body, excerpt);
           final content = body.trim().isNotEmpty ? body : excerpt;
 
           return ListView(
@@ -154,38 +301,10 @@ class _BlogDetailView extends StatelessWidget {
                       borderRadius: const BorderRadius.vertical(
                         top: Radius.circular(16),
                       ),
-                      child: AspectRatio(
-                        aspectRatio: 16 / 9,
-                        child: coverUrl.isEmpty
-                            ? Container(
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.surfaceContainerHighest,
-                                child: Icon(
-                                  Icons.image_outlined,
-                                  size: 40,
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.onSurfaceVariant,
-                                ),
-                              )
-                            : Image.network(
-                                coverUrl,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) =>
-                                    Container(
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.surfaceContainerHighest,
-                                      child: Icon(
-                                        Icons.broken_image_outlined,
-                                        size: 40,
-                                        color: Theme.of(
-                                          context,
-                                        ).colorScheme.onSurfaceVariant,
-                                      ),
-                                    ),
-                              ),
+                      child: SizedBox(
+                        height: 220,
+                        width: double.infinity,
+                        child: _mediaCarousel(context, blog),
                       ),
                     ),
                     Padding(
@@ -204,28 +323,6 @@ class _BlogDetailView extends StatelessWidget {
                                       .headlineSmall
                                       ?.copyWith(fontWeight: FontWeight.w800),
                                 ),
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.copy_rounded),
-                                tooltip: 'Copy blog',
-                                onPressed: copyPayload.trim().isEmpty
-                                    ? null
-                                    : () async {
-                                        await Clipboard.setData(
-                                          ClipboardData(text: copyPayload),
-                                        );
-                                        if (!context.mounted) {
-                                          return;
-                                        }
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          const SnackBar(
-                                            content: Text('Blog copied'),
-                                            behavior: SnackBarBehavior.floating,
-                                          ),
-                                        );
-                                      },
                               ),
                             ],
                           ),

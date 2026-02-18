@@ -5,6 +5,7 @@ import 'package:anandham_core/anandham_core.dart';
 import 'package:anandham_user/app/routes/route_names.dart';
 import 'package:anandham_user/core/utils/helpers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -168,6 +169,19 @@ class _HomePageState extends State<HomePage> {
         return RouteNames.photosList;
       default:
         return null;
+    }
+  }
+
+  Future<void> _openCreatorWebsite() async {
+    final uri = Uri.parse('https://abijithcb.com');
+    final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!launched && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Unable to open website'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 
@@ -436,6 +450,30 @@ class _HomePageState extends State<HomePage> {
                   ),
                 );
               },
+            ),
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(24, 20, 24, 8),
+                child: Center(
+                  child: Column(
+                    children: [
+                      TextButton.icon(
+                        onPressed: _openCreatorWebsite,
+                        icon: const Icon(Icons.public_rounded, size: 18),
+                        label: const Text('abijithcb.com'),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Created by ❤️ Abi',
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
             // Bottom padding
             SliverPadding(
