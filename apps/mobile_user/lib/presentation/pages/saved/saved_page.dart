@@ -55,12 +55,51 @@ class _SavedViewState extends State<_SavedView>
       body: SafeArea(
         child: Column(
           children: [
-            TabBar(
-              controller: _tabController,
-              tabs: const [
-                Tab(icon: Icon(Icons.book), text: 'Krithis'),
-                Tab(icon: Icon(Icons.music_note), text: 'Keerthanams'),
-              ],
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Saved',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Your bookmarked items, ready to revisit.',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Theme.of(context).dividerColor),
+                ),
+                child: TabBar(
+                  controller: _tabController,
+                  labelColor: Theme.of(context).colorScheme.onPrimaryContainer,
+                  unselectedLabelColor:
+                      Theme.of(context).colorScheme.onSurfaceVariant,
+                  indicator: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  tabs: const [
+                    Tab(icon: Icon(Icons.book), text: 'Krithis'),
+                    Tab(icon: Icon(Icons.music_note), text: 'Keerthanams'),
+                  ],
+                ),
+              ),
             ),
             Expanded(
               child: TabBarView(
@@ -78,8 +117,11 @@ class _SavedViewState extends State<_SavedView>
                       }
 
                       if (state.items.isEmpty) {
-                        return const Center(
-                          child: Text('No saved krithis yet'),
+                        return _buildEmptyState(
+                          context,
+                          icon: Icons.book_outlined,
+                          title: 'No saved krithis yet',
+                          subtitle: 'Tap the bookmark icon to save a krithi.',
                         );
                       }
 
@@ -103,8 +145,12 @@ class _SavedViewState extends State<_SavedView>
                       }
 
                       if (state.items.isEmpty) {
-                        return const Center(
-                          child: Text('No saved keerthanams yet'),
+                        return _buildEmptyState(
+                          context,
+                          icon: Icons.music_note_outlined,
+                          title: 'No saved keerthanams yet',
+                          subtitle:
+                              'Tap the bookmark icon to save a keerthanam.',
                         );
                       }
 
@@ -128,6 +174,45 @@ class _SavedViewState extends State<_SavedView>
     );
   }
 
+  Widget _buildEmptyState(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String subtitle,
+  }) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 48,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              title,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              subtitle,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildSavedList(
     BuildContext context,
     List<Map<String, dynamic>> items,
@@ -136,7 +221,7 @@ class _SavedViewState extends State<_SavedView>
     bool showAuthor = false,
   }) {
     return ListView.separated(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       itemCount: items.length,
       separatorBuilder: (context, index) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
@@ -164,6 +249,13 @@ class _SavedViewState extends State<_SavedView>
               color: Theme.of(context).colorScheme.surface,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: Theme.of(context).dividerColor),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.04),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
             child: Row(
               children: [
@@ -201,19 +293,15 @@ class _SavedViewState extends State<_SavedView>
                   ),
                 ),
                 const SizedBox(width: 12),
-                InkWell(
-                  onTap: () async {
+                IconButton(
+                  onPressed: () async {
                     await onRemove(id);
                   },
-                  borderRadius: BorderRadius.circular(24),
-                  child: Padding(
-                    padding: const EdgeInsets.all(8),
-                    child: Icon(
-                      Icons.bookmark,
-                      color: Theme.of(context).colorScheme.primary,
-                      size: 24,
-                    ),
+                  icon: Icon(
+                    Icons.bookmark,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
+                  tooltip: 'Remove',
                 ),
               ],
             ),
