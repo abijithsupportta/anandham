@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:anandham_core/anandham_core.dart';
 import 'package:anandham_user/core/di/injection_container.dart';
 import 'package:anandham_user/data/repositories/local_content_repository.dart';
 import 'package:anandham_user/data/services/content_sync_service.dart';
@@ -8,7 +9,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:share_plus/share_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class PhotosListPage extends StatefulWidget {
   const PhotosListPage({super.key});
@@ -23,13 +24,57 @@ class _PhotosListPageState extends State<PhotosListPage> {
 
   List<Map<String, dynamic>> _items = const [];
   final Map<int, int> _currentImageIndex = {};
+  Set<String> _likedPhotoIds = const {};
   bool _isLoading = true;
   String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
+    _loadLikedPhotos();
     _loadPhotos();
+  }
+
+  String _likesStorageKey() {
+    final userId = SupabaseConfig.currentUser?.id ?? 'guest';
+    return 'photos_liked_$userId';
+  }
+
+  Future<void> _loadLikedPhotos() async {
+    final prefs = await SharedPreferences.getInstance();
+    final liked = prefs.getStringList(_likesStorageKey()) ?? const [];
+    if (!mounted) {
+      return;
+    }
+    setState(() {
+      _likedPhotoIds = liked.toSet();
+    });
+  }
+
+  Future<void> _persistLikedPhotos() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(_likesStorageKey(), _likedPhotoIds.toList());
+  }
+
+  Future<void> _likePhotoOnce(String photoId, String title) async {
+    if (photoId.isEmpty || _likedPhotoIds.contains(photoId)) {
+      return;
+    }
+
+    setState(() {
+      _likedPhotoIds = {..._likedPhotoIds, photoId};
+    });
+    await _persistLikedPhotos();
+
+    if (!mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('You loved "$title"'),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
   Future<void> _loadPhotos() async {
@@ -177,35 +222,6 @@ class _PhotosListPageState extends State<PhotosListPage> {
     }
   }
 
-  Future<void> _shareAllImages(List<String> imageUrls, String title) async {
-    if (imageUrls.isEmpty) {
-      return;
-    }
-
-    try {
-      final dio = Dio();
-      final tempDir = await getTemporaryDirectory();
-      final base = _sanitizeBaseName(title);
-      final stamp = DateTime.now().millisecondsSinceEpoch;
-      final files = <XFile>[];
-
-      for (var i = 0; i < imageUrls.length; i++) {
-        final path = '${tempDir.path}/${base}_${i + 1}_$stamp.jpg';
-        await dio.download(imageUrls[i], path);
-        files.add(XFile(path));
-      }
-
-      await Share.shareXFiles(files, text: title, subject: 'Anandham - $title');
-    } catch (e) {
-      if (!mounted) {
-        return;
-      }
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Share failed: ${e.toString()}')));
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -225,9 +241,11 @@ class _PhotosListPageState extends State<PhotosListPage> {
                     const SizedBox(height: 14),
                 itemBuilder: (context, index) {
                   final item = _items[index];
+                  final photoId = (item['id'] as String?) ?? '';
                   final title = (item['title'] as String?) ?? '';
                   final description = (item['description'] as String?) ?? '';
                   final imageUrl = (item['image_url'] as String?) ?? '';
+                  final isLiked = _likedPhotoIds.contains(photoId);
                   final images =
                       (item['images'] as List<dynamic>?)
                           ?.cast<String>()
@@ -379,18 +397,16 @@ class _PhotosListPageState extends State<PhotosListPage> {
                               const SizedBox(width: 12),
                               Expanded(
                                 child: ElevatedButton.icon(
-                                  onPressed: displayImages.isEmpty
+                                  onPressed: photoId.isEmpty || isLiked
                                       ? null
-                                      : () => _shareAllImages(
-                                          displayImages,
-                                          title,
-                                        ),
-                                  icon: const Icon(Icons.share, size: 20),
-                                  label: Text(
-                                    displayImages.length > 1
-                                        ? 'Share (${displayImages.length})'
-                                        : 'Share',
+                                      : () => _likePhotoOnce(photoId, title),
+                                  icon: Icon(
+                                    isLiked
+                                        ? Icons.favorite
+                                        : Icons.favorite_border,
+                                    size: 20,
                                   ),
+                                  label: Text(isLiked ? 'Loved' : 'Love'),
                                   style: ElevatedButton.styleFrom(
                                     padding: const EdgeInsets.symmetric(
                                       vertical: 12,
