@@ -29,8 +29,26 @@ export const dharmaService = {
         .from("dharmas")
         .select("*, category:content_categories(id, name)")
         .eq("is_deleted", false)
+        .order("display_order", { ascending: true })
         .order("created_at", { ascending: false })
     );
+  },
+
+  async reorder(idsInOrder: string[]): Promise<ServiceResult<null>> {
+    const sb = getSupabase();
+
+    const updates = idsInOrder.map((id, index) =>
+      sb
+        .from("dharmas")
+        .update({ display_order: index, updated_at: now() })
+        .eq("id", id)
+    );
+
+    const results = await Promise.all(updates);
+    const error = results.find((result) => result.error)?.error;
+    if (error) return { data: null, error: error.message };
+
+    return { data: null, error: null };
   },
 
   async getById(id: string): Promise<ServiceResult<Dharma>> {
@@ -108,9 +126,21 @@ export const dharmaService = {
   // ── CRUD ───────────────────────────────────────────────
 
   async create(input: DharmaFormInput): Promise<ServiceResult<Dharma>> {
+    const sb = getSupabase();
     const timestamp = now();
-    return serviceCall((sb) =>
-      sb
+
+    const { data: lastRow } = await sb
+      .from("dharmas")
+      .select("display_order")
+      .eq("is_deleted", false)
+      .order("display_order", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const nextOrder = ((lastRow as { display_order?: number } | null)?.display_order ?? -1) + 1;
+
+    return serviceCall((innerSb) =>
+      innerSb
         .from("dharmas")
         .insert({
           title: input.title,
@@ -120,6 +150,7 @@ export const dharmaService = {
           category_id: input.category_id || null,
           youtube_url: input.youtube_url || null,
           status: input.status,
+          display_order: nextOrder,
           published_at: input.status === "published" ? timestamp : null,
           created_at: timestamp,
           updated_at: timestamp,

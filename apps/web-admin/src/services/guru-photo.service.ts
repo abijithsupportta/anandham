@@ -25,6 +25,23 @@ export const guruPhotoService = {
     );
   },
 
+  async reorder(idsInOrder: string[]): Promise<ServiceResult<null>> {
+    const sb = getSupabase();
+
+    const updates = idsInOrder.map((id, index) =>
+      sb
+        .from("guru_photos")
+        .update({ display_order: index, updated_at: now() })
+        .eq("id", id)
+    );
+
+    const results = await Promise.all(updates);
+    const error = results.find((result) => result.error)?.error;
+    if (error) return { data: null, error: error.message };
+
+    return { data: null, error: null };
+  },
+
   async getById(id: string): Promise<ServiceResult<GuruPhoto>> {
     return serviceCall((sb) =>
       sb.from("guru_photos").select("*").eq("id", id).single()
@@ -84,9 +101,21 @@ export const guruPhotoService = {
   // ── CRUD ───────────────────────────────────────────────
 
   async create(input: GuruPhotoFormInput): Promise<ServiceResult<GuruPhoto>> {
+    const sb = getSupabase();
     const timestamp = now();
-    return serviceCall((sb) =>
-      sb
+
+    const { data: lastRow } = await sb
+      .from("guru_photos")
+      .select("display_order")
+      .eq("is_deleted", false)
+      .order("display_order", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const nextOrder = ((lastRow as { display_order?: number } | null)?.display_order ?? -1) + 1;
+
+    return serviceCall((innerSb) =>
+      innerSb
         .from("guru_photos")
         .insert({
           title: input.title,
@@ -94,6 +123,7 @@ export const guruPhotoService = {
           description: input.description,
           image_url: input.image_url || "",
           category_id: input.category_id || null,
+          display_order: nextOrder,
           status: input.status,
           published_at: input.status === "published" ? timestamp : null,
           created_at: timestamp,
@@ -145,7 +175,7 @@ export const guruPhotoService = {
     return serviceCall((sb) =>
       sb
         .from("guru_photos")
-        .update({ is_deleted: true, deleted_at: now() })
+        .delete()
         .eq("id", id)
     ) as Promise<ServiceResult<null>>;
   },

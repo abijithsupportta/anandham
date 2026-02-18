@@ -10,6 +10,7 @@ import {
   Mail,
   Calendar,
   Shield,
+  Trash2,
 } from "lucide-react";
 import { userService } from "@/services";
 import { useQuery } from "@/hooks/useQuery";
@@ -27,6 +28,7 @@ const roleLabels: Record<UserRole, string> = {
   super_admin: "Super Admin",
   admin: "Admin",
   author: "Author",
+  customer: "Customer",
 };
 
 const roleFilters: { label: string; value: "all" | UserRole }[] = [
@@ -34,6 +36,7 @@ const roleFilters: { label: string; value: "all" | UserRole }[] = [
   { label: "Super Admin", value: "super_admin" },
   { label: "Admin", value: "admin" },
   { label: "Author", value: "author" },
+  { label: "Customer", value: "customer" },
 ];
 
 export default function UsersPage() {
@@ -46,6 +49,8 @@ export default function UsersPage() {
   const [roleFilter, setRoleFilter] = useState<"all" | UserRole>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ userId: string; name: string; role: UserRole } | null>(null);
+  const [deleting, setDeleting] = useState(false);
   const perPage = 10;
 
   async function handleToggleActive(userId: string, currentActive: boolean) {
@@ -57,6 +62,22 @@ export default function UsersPage() {
     toast(currentActive ? "User deactivated" : "User activated", "success");
     refetch();
     setOpenMenu(null);
+  }
+
+  async function handleDeleteUser(userId: string, role: string) {
+    setDeleting(true);
+    const result = await userService.deleteUser(userId, role);
+    setDeleting(false);
+
+    if (result.error) {
+      toast(result.error, "error");
+      setDeleteConfirm(null);
+      return;
+    }
+
+    toast("User permanently deleted from database and Supabase Auth", "success");
+    setDeleteConfirm(null);
+    refetch();
   }
 
   const filtered = users.filter((u) => {
@@ -164,6 +185,12 @@ export default function UsersPage() {
                               Activate
                             </button>
                           )}
+                          {user.role !== "super_admin" && (
+                            <button onClick={() => { setDeleteConfirm({ userId: user.id, name: user.full_name, role: user.role }); setOpenMenu(null); }} className="flex w-full items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10">
+                              <Trash2 className="h-4 w-4" />
+                              Delete
+                            </button>
+                          )}
                         </div>
                       )}
                     </div>
@@ -175,6 +202,36 @@ export default function UsersPage() {
           </table>
         </div>
       </div>
+
+      {/* Delete confirmation modal */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="max-w-md rounded-lg bg-card p-6 shadow-lg">
+            <h3 className="text-lg font-semibold text-foreground">Delete User?</h3>
+            <p className="mt-2 text-sm text-muted">
+              This will permanently delete <strong>{deleteConfirm.name}</strong> ({deleteConfirm.role}) from the database and Supabase Auth. This action cannot be undone.
+            </p>
+            <div className="mt-6 flex gap-3">
+              <button
+                onClick={() => {
+                  handleDeleteUser(deleteConfirm.userId, deleteConfirm.role);
+                }}
+                disabled={deleting}
+                className="flex-1 rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {deleting ? "Deleting..." : "Delete Permanently"}
+              </button>
+              <button
+                onClick={() => setDeleteConfirm(null)}
+                disabled={deleting}
+                className="flex-1 rounded-lg border border-border-main px-3 py-2 text-sm font-medium text-foreground transition hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={setCurrentPage} />
     </div>

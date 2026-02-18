@@ -24,6 +24,7 @@ export const keerthanamService = {
       .from("guru_keerthanams")
       .select("*")
       .eq("is_deleted", false)
+      .order("display_order", { ascending: true })
       .order("created_at", { ascending: false });
 
     if (error) return { data: null, error: error.message };
@@ -51,6 +52,23 @@ export const keerthanamService = {
     }));
 
     return { data: result, error: null };
+  },
+
+  async reorder(idsInOrder: string[]): Promise<ServiceResult<null>> {
+    const sb = getSupabase();
+
+    const updates = idsInOrder.map((id, index) =>
+      sb
+        .from("guru_keerthanams")
+        .update({ display_order: index, updated_at: now() })
+        .eq("id", id)
+    );
+
+    const results = await Promise.all(updates);
+    const error = results.find((result) => result.error)?.error;
+    if (error) return { data: null, error: error.message };
+
+    return { data: null, error: null };
   },
 
   async getById(id: string): Promise<ServiceResult<GuruKeerthanam>> {
@@ -98,6 +116,16 @@ export const keerthanamService = {
     const timestamp = now();
     const isPublished = input.status === "published";
 
+    const { data: lastRow } = await sb
+      .from("guru_keerthanams")
+      .select("display_order")
+      .eq("is_deleted", false)
+      .order("display_order", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const nextOrder = ((lastRow as { display_order?: number } | null)?.display_order ?? -1) + 1;
+
     const { data, error } = await sb
       .from("guru_keerthanams")
       .insert({
@@ -107,6 +135,7 @@ export const keerthanamService = {
         author_name: input.author_name || '',
         youtube_url: input.youtube_url || null,
         status: input.status,
+        display_order: nextOrder,
         published_at: isPublished ? timestamp : null,
         created_at: timestamp,
         updated_at: timestamp,
@@ -195,7 +224,7 @@ export const keerthanamService = {
     return serviceCall((sb) =>
       sb
         .from("guru_keerthanams")
-        .update({ is_deleted: true, deleted_at: now() })
+        .delete()
         .eq("id", id)
     ) as Promise<ServiceResult<null>>;
   },

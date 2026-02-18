@@ -4,7 +4,7 @@
 
 // ── Enums ──────────────────────────────────────────────────────────────
 
-export type UserRole = "super_admin" | "admin" | "author";
+export type UserRole = "super_admin" | "admin" | "author" | "customer";
 export type ContentStatus = "draft" | "published";
 export type ContentLanguage = "ta" | "en" | "sa" | "ml" | "hi";
 export type AuditAction = "INSERT" | "UPDATE" | "DELETE";
@@ -84,6 +84,7 @@ export interface Krithi {
   title: string;
   slug: string;
   description: string;
+  display_order: number;
   category_id?: string | null;
   author_id?: string | null;
   language: ContentLanguage;
@@ -129,6 +130,7 @@ export interface Dharma {
   slug: string;
   description: string;
   translation: string;
+  display_order: number;
   category_id?: string | null;
   author_id?: string | null;
   language: ContentLanguage;
@@ -221,6 +223,7 @@ export interface GuruKeerthanam {
   slug: string;
   description: string;
   author_name: string;
+  display_order: number;
   language: ContentLanguage;
   youtube_url?: string | null;
   status: ContentStatus;
