@@ -17,45 +17,16 @@ class _RegisterPageState extends State<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
   final _fullNameController = TextEditingController();
   final _emailController = TextEditingController();
-  final _phoneController = TextEditingController();
-  final _houseNameController = TextEditingController();
-  final _addressController = TextEditingController();
-  final _cityController = TextEditingController();
-  final _stateController = TextEditingController();
-  final _pincodeController = TextEditingController();
-  final _sndpUnionController = TextEditingController();
-  final _sndpBranchController = TextEditingController();
-  final _sndpTempleController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmController = TextEditingController();
 
-  String _selectedCountryCode = '+91';
-  bool _isSndpMember = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
-
-  static const List<String> _countryCodes = [
-    '+91',
-    '+971',
-    '+1',
-    '+966',
-    '+44',
-    '+968',
-  ];
 
   @override
   void dispose() {
     _fullNameController.dispose();
     _emailController.dispose();
-    _phoneController.dispose();
-    _houseNameController.dispose();
-    _addressController.dispose();
-    _cityController.dispose();
-    _stateController.dispose();
-    _pincodeController.dispose();
-    _sndpUnionController.dispose();
-    _sndpBranchController.dispose();
-    _sndpTempleController.dispose();
     _passwordController.dispose();
     _confirmController.dispose();
     super.dispose();
@@ -66,35 +37,10 @@ class _RegisterPageState extends State<RegisterPage> {
       return;
     }
 
-    String? optionalValue(String value) {
-      final trimmed = value.trim();
-      return trimmed.isEmpty ? null : trimmed;
-    }
-
-    final phoneNumber = optionalValue(_phoneController.text);
-    final address = optionalValue(_addressController.text);
-    final houseName = optionalValue(_houseNameController.text);
-    final city = optionalValue(_cityController.text);
-    final stateName = optionalValue(_stateController.text);
-    final pincode = optionalValue(_pincodeController.text);
-
     await context.read<AuthCubit>().signUp(
       fullName: _fullNameController.text.trim(),
       email: _emailController.text.trim(),
       password: _passwordController.text,
-      phoneCountryCode: phoneNumber == null ? null : _selectedCountryCode,
-      phoneNumber: phoneNumber,
-      address: address,
-      houseName: houseName,
-      city: city,
-      stateName: stateName,
-      pincode: pincode,
-      isSndpMember: _isSndpMember,
-      sndpUnionName: _isSndpMember ? _sndpUnionController.text.trim() : null,
-      sndpBranchNumber: _isSndpMember
-          ? _sndpBranchController.text.trim()
-          : null,
-      sndpTempleName: _isSndpMember ? _sndpTempleController.text.trim() : null,
     );
   }
 
@@ -168,154 +114,6 @@ class _RegisterPageState extends State<RegisterPage> {
                     ),
                     validator: Validators.email,
                   ),
-                  const SizedBox(height: 14),
-                  Row(
-                    children: [
-                      SizedBox(
-                        width: 120,
-                        child: DropdownButtonFormField<String>(
-                          initialValue: _selectedCountryCode,
-                          decoration: const InputDecoration(labelText: 'Code'),
-                          items: _countryCodes
-                              .map(
-                                (code) => DropdownMenuItem<String>(
-                                  value: code,
-                                  child: Text(code),
-                                ),
-                              )
-                              .toList(),
-                          onChanged: (value) {
-                            if (value == null) {
-                              return;
-                            }
-                            setState(() {
-                              _selectedCountryCode = value;
-                            });
-                          },
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: TextFormField(
-                          controller: _phoneController,
-                          keyboardType: TextInputType.phone,
-                          textInputAction: TextInputAction.next,
-                          decoration: const InputDecoration(
-                            labelText: 'Phone number',
-                          ),
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return null;
-                            }
-                            return Validators.phoneLocal(value);
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    'Address Details',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _houseNameController,
-                    textInputAction: TextInputAction.next,
-                    decoration: const InputDecoration(labelText: 'House name'),
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _addressController,
-                    textInputAction: TextInputAction.next,
-                    maxLines: 2,
-                    decoration: const InputDecoration(labelText: 'Address'),
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _cityController,
-                    textInputAction: TextInputAction.next,
-                    decoration: const InputDecoration(labelText: 'City'),
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _stateController,
-                    textInputAction: TextInputAction.next,
-                    decoration: const InputDecoration(labelText: 'State'),
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _pincodeController,
-                    keyboardType: TextInputType.text,
-                    textInputAction: TextInputAction.next,
-                    decoration: const InputDecoration(
-                      labelText: 'Pincode / Postal code',
-                    ),
-                    validator: (value) {
-                      if (value == null || value.trim().isEmpty) {
-                        return null;
-                      }
-                      return Validators.pincode(
-                        value,
-                        countryCode: _selectedCountryCode,
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    'SNDP Details',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  SwitchListTile.adaptive(
-                    value: _isSndpMember,
-                    title: const Text('Are you a member of SNDP Yogam?'),
-                    contentPadding: EdgeInsets.zero,
-                    onChanged: (value) {
-                      setState(() {
-                        _isSndpMember = value;
-                      });
-                    },
-                  ),
-                  if (_isSndpMember) ...[
-                    const SizedBox(height: 8),
-                    TextFormField(
-                      controller: _sndpUnionController,
-                      textInputAction: TextInputAction.next,
-                      decoration: const InputDecoration(
-                        labelText: 'Union name',
-                      ),
-                      validator: (value) => _isSndpMember
-                          ? Validators.required(value, 'Union name')
-                          : null,
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: _sndpBranchController,
-                      textInputAction: TextInputAction.next,
-                      decoration: const InputDecoration(
-                        labelText: 'Branch number',
-                      ),
-                      validator: (value) => _isSndpMember
-                          ? Validators.required(value, 'Branch number')
-                          : null,
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: _sndpTempleController,
-                      textInputAction: TextInputAction.next,
-                      decoration: const InputDecoration(
-                        labelText: 'Temple name',
-                      ),
-                      validator: (value) => _isSndpMember
-                          ? Validators.required(value, 'Temple name')
-                          : null,
-                    ),
-                  ],
                   const SizedBox(height: 20),
                   Text(
                     'Security',
