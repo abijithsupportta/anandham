@@ -389,7 +389,10 @@ class ContentSyncService {
       return;
     }
 
-    await flushPendingOps();
+    final didFlushPendingOps = await flushPendingOps();
+    if (!didFlushPendingOps) {
+      return;
+    }
 
     final rows = await SupabaseConfig.client
         .from('saved_items')
@@ -486,11 +489,12 @@ class ContentSyncService {
         );
   }
 
-  Future<void> flushPendingOps() async {
+  Future<bool> flushPendingOps() async {
     final query = _db.select(_db.pendingOps)
       ..orderBy([(table) => OrderingTerm.asc(table.createdAt)]);
 
     final ops = await query.get();
+    var allSynced = true;
     for (final op in ops) {
       try {
         final payload = jsonDecode(op.payloadJson) as Map<String, dynamic>;
@@ -515,9 +519,12 @@ class ContentSyncService {
           _db.pendingOps,
         )..where((table) => table.opId.equals(op.opId))).go();
       } catch (_) {
+        allSynced = false;
         break;
       }
     }
+
+    return allSynced;
   }
 
   DateTime? _toDateTime(dynamic value) {

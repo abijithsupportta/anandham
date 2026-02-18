@@ -9,7 +9,6 @@ import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class PhotosListPage extends StatefulWidget {
   const PhotosListPage({super.key});
@@ -25,56 +24,166 @@ class _PhotosListPageState extends State<PhotosListPage> {
   List<Map<String, dynamic>> _items = const [];
   final Map<int, int> _currentImageIndex = {};
   Set<String> _likedPhotoIds = const {};
+  Map<String, int> _likeCounts = const {};
+  Set<String> _likeInProgressIds = const {};
   bool _isLoading = true;
   String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
-    _loadLikedPhotos();
     _loadPhotos();
   }
 
-  String _likesStorageKey() {
-    final userId = SupabaseConfig.currentUser?.id ?? 'guest';
-    return 'photos_liked_$userId';
-  }
+  Future<void> _loadLikesForPhotos(List<Map<String, dynamic>> items) async {
+    final photoIds = items
+        .map((item) => item['id'] as String?)
+        .whereType<String>()
+        .where((id) => id.trim().isNotEmpty)
+        .toList();
 
-  Future<void> _loadLikedPhotos() async {
-    final prefs = await SharedPreferences.getInstance();
-    final liked = prefs.getStringList(_likesStorageKey()) ?? const [];
-    if (!mounted) {
+    if (photoIds.isEmpty) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _likedPhotoIds = const {};
+        _likeCounts = const {};
+      });
       return;
     }
-    setState(() {
-      _likedPhotoIds = liked.toSet();
-    });
+
+    try {
+      final rows = await SupabaseConfig.client
+          .from('guru_photo_likes')
+          .select('guru_photo_id, user_id')
+          .inFilter('guru_photo_id', photoIds);
+
+      final data = (rows as List<dynamic>).cast<Map<String, dynamic>>();
+      final currentUserId = SupabaseConfig.currentUser?.id;
+      final counts = <String, int>{};
+      final likedByMe = <String>{};
+
+      for (final row in data) {
+        final photoId = row['guru_photo_id'] as String?;
+        final userId = row['user_id'] as String?;
+        if (photoId == null || photoId.isEmpty) {
+          continue;
+        }
+
+        counts[photoId] = (counts[photoId] ?? 0) + 1;
+        if (currentUserId != null && userId == currentUserId) {
+          likedByMe.add(photoId);
+        }
+      }
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _likeCounts = counts;
+        _likedPhotoIds = likedByMe;
+      });
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        final fallback = <String, int>{};
+        for (final id in photoIds) {
+          fallback[id] = _likeCounts[id] ?? 0;
+        }
+        _likeCounts = fallback;
+      });
+    }
   }
 
-  Future<void> _persistLikedPhotos() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList(_likesStorageKey(), _likedPhotoIds.toList());
-  }
-
-  Future<void> _likePhotoOnce(String photoId, String title) async {
-    if (photoId.isEmpty || _likedPhotoIds.contains(photoId)) {
+  Future<void> _likePhoto(String photoId, String title) async {
+    if (photoId.isEmpty) {
       return;
     }
+
+    final userId = SupabaseConfig.currentUser?.id;
+    if (userId == null) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please sign in to love photos.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    if (_likeInProgressIds.contains(photoId)) {
+      return;
+    }
+
+    if (_likedPhotoIds.contains(photoId)) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('You already loved this photo.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    final previousLiked = _likedPhotoIds;
+    final previousCounts = _likeCounts;
 
     setState(() {
       _likedPhotoIds = {..._likedPhotoIds, photoId};
+      _likeCounts = {..._likeCounts, photoId: (_likeCounts[photoId] ?? 0) + 1};
+      _likeInProgressIds = {..._likeInProgressIds, photoId};
     });
-    await _persistLikedPhotos();
 
-    if (!mounted) {
-      return;
+    try {
+      await SupabaseConfig.client.from('guru_photo_likes').upsert({
+        'user_id': userId,
+        'guru_photo_id': photoId,
+      }, onConflict: 'user_id,guru_photo_id');
+
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('You loved "$title"'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _likedPhotoIds = previousLiked;
+        _likeCounts = previousCounts;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Unable to save your like now. Please try again.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _likeInProgressIds = {..._likeInProgressIds}..remove(photoId);
+        });
+      }
     }
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('You loved "$title"'),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
   }
 
   Future<void> _loadPhotos() async {
@@ -101,6 +210,7 @@ class _PhotosListPageState extends State<PhotosListPage> {
         _isLoading = false;
         _errorMessage = null;
       });
+      await _loadLikesForPhotos(localItems);
 
       if (hasCached || localItems.isNotEmpty) {
         unawaited(_refreshInBackground());
@@ -116,6 +226,7 @@ class _PhotosListPageState extends State<PhotosListPage> {
         _isLoading = false;
         _errorMessage = localItems.isEmpty ? 'Failed to load photos' : null;
       });
+      await _loadLikesForPhotos(localItems);
     }
   }
 
@@ -130,6 +241,7 @@ class _PhotosListPageState extends State<PhotosListPage> {
         _items = refreshed;
         _errorMessage = null;
       });
+      await _loadLikesForPhotos(refreshed);
     } catch (_) {}
   }
 
@@ -246,6 +358,7 @@ class _PhotosListPageState extends State<PhotosListPage> {
                   final description = (item['description'] as String?) ?? '';
                   final imageUrl = (item['image_url'] as String?) ?? '';
                   final isLiked = _likedPhotoIds.contains(photoId);
+                  final likesCount = _likeCounts[photoId] ?? 0;
                   final images =
                       (item['images'] as List<dynamic>?)
                           ?.cast<String>()
@@ -397,16 +510,21 @@ class _PhotosListPageState extends State<PhotosListPage> {
                               const SizedBox(width: 12),
                               Expanded(
                                 child: ElevatedButton.icon(
-                                  onPressed: photoId.isEmpty || isLiked
+                                  onPressed: photoId.isEmpty
                                       ? null
-                                      : () => _likePhotoOnce(photoId, title),
+                                      : () => _likePhoto(photoId, title),
                                   icon: Icon(
                                     isLiked
                                         ? Icons.favorite
                                         : Icons.favorite_border,
                                     size: 20,
+                                    color: isLiked ? Colors.red : null,
                                   ),
-                                  label: Text(isLiked ? 'Loved' : 'Love'),
+                                  label: Text(
+                                    isLiked
+                                        ? 'Loved ($likesCount)'
+                                        : 'Love ($likesCount)',
+                                  ),
                                   style: ElevatedButton.styleFrom(
                                     padding: const EdgeInsets.symmetric(
                                       vertical: 12,
