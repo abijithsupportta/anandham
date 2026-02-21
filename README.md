@@ -37,14 +37,14 @@
 
 Anandham is a multi-platform application suite consisting of:
 
-| Platform | App | Description |
-|----------|-----|-------------|
-| 📱 Mobile | **User App** | Consumer-facing app for end users |
-| 📱 Mobile | **Author App** | Content management for authors/creators |
-| 📱 Mobile | **Admin App** | Administrative dashboard & controls |
-| 🌐 Web | **User Website** | Public-facing website for users |
-| 🌐 Web | **Author Portal** | Author content management portal |
-| 🌐 Web | **Admin Dashboard** | System administration dashboard |
+| Platform  | App                 | Description                             |
+| --------- | ------------------- | --------------------------------------- |
+| 📱 Mobile | **User App**        | Consumer-facing app for end users       |
+| 📱 Mobile | **Author App**      | Content management for authors/creators |
+| 📱 Mobile | **Admin App**       | Administrative dashboard & controls     |
+| 🌐 Web    | **User Website**    | Public-facing website for users         |
+| 🌐 Web    | **Author Portal**   | Author content management portal        |
+| 🌐 Web    | **Admin Dashboard** | System administration dashboard         |
 
 All applications share common utilities, UI components, and configurations through shared packages, ensuring consistency and reducing code duplication.
 
@@ -96,44 +96,44 @@ All applications share common utilities, UI components, and configurations throu
 
 ### Core
 
-| Technology | Version | Purpose |
-|-----------|---------|---------|
-| **Turborepo** | ^2.8 | Monorepo orchestration, caching, task pipeline |
-| **Node.js** | 24.x | JavaScript runtime |
-| **npm** | 11.x | Package manager with workspaces |
+| Technology    | Version | Purpose                                        |
+| ------------- | ------- | ---------------------------------------------- |
+| **Turborepo** | ^2.8    | Monorepo orchestration, caching, task pipeline |
+| **Node.js**   | 24.x    | JavaScript runtime                             |
+| **npm**       | 11.x    | Package manager with workspaces                |
 
 ### Mobile (Flutter)
 
-| Technology | Version | Purpose |
-|-----------|---------|---------|
-| **Flutter** | 3.38.x | Cross-platform mobile framework |
-| **Dart** | 3.10.x | Programming language |
-| **flutter_bloc** | latest | State management (BLoC pattern) |
-| **get_it** | latest | Dependency injection |
-| **dio** | latest | HTTP client |
-| **equatable** | latest | Value equality |
-| **dartz** | latest | Functional programming |
-| **shared_preferences** | latest | Local storage |
-| **connectivity_plus** | latest | Network connectivity |
+| Technology             | Version | Purpose                         |
+| ---------------------- | ------- | ------------------------------- |
+| **Flutter**            | 3.38.x  | Cross-platform mobile framework |
+| **Dart**               | 3.10.x  | Programming language            |
+| **flutter_bloc**       | latest  | State management (BLoC pattern) |
+| **get_it**             | latest  | Dependency injection            |
+| **dio**                | latest  | HTTP client                     |
+| **equatable**          | latest  | Value equality                  |
+| **dartz**              | latest  | Functional programming          |
+| **shared_preferences** | latest  | Local storage                   |
+| **connectivity_plus**  | latest  | Network connectivity            |
 
 ### Web (Next.js)
 
-| Technology | Version | Purpose |
-|-----------|---------|---------|
-| **Next.js** | 15.x | React meta-framework (App Router) |
-| **React** | 19.x | UI library |
-| **TypeScript** | 5.x | Type-safe JavaScript |
-| **Tailwind CSS** | 4.x | Utility-first CSS framework |
-| **ESLint** | 9.x | Code linting |
-| **Prettier** | latest | Code formatting |
+| Technology       | Version | Purpose                           |
+| ---------------- | ------- | --------------------------------- |
+| **Next.js**      | 16.x    | React meta-framework (App Router) |
+| **React**        | 19.x    | UI library                        |
+| **TypeScript**   | 5.x     | Type-safe JavaScript              |
+| **Tailwind CSS** | 4.x     | Utility-first CSS framework       |
+| **ESLint**       | 9.x     | Code linting                      |
+| **Prettier**     | latest  | Code formatting                   |
 
 ### Deployment
 
-| Service | Purpose |
-|---------|---------|
-| **Vercel** | Web app hosting & CI/CD |
-| **Google Play Store** | Android distribution |
-| **Apple App Store** | iOS distribution |
+| Service               | Purpose                 |
+| --------------------- | ----------------------- |
+| **Vercel**            | Web app hosting & CI/CD |
+| **Google Play Store** | Android distribution    |
+| **Apple App Store**   | iOS distribution        |
 
 ---
 
@@ -255,15 +255,15 @@ anandham/
 
 Ensure you have the following installed:
 
-| Tool | Min Version | Installation |
-|------|------------|-------------|
-| **Node.js** | 20.x+ | [nodejs.org](https://nodejs.org) |
-| **npm** | 10.x+ | Comes with Node.js |
-| **Flutter** | 3.38.x+ | [flutter.dev/docs/get-started](https://flutter.dev/docs/get-started/install) |
-| **Dart** | 3.10.x+ | Comes with Flutter |
-| **Android Studio** | Latest | [developer.android.com](https://developer.android.com/studio) |
-| **Xcode** | 15+ (macOS) | Mac App Store |
-| **Git** | 2.x+ | [git-scm.com](https://git-scm.com) |
+| Tool               | Min Version | Installation                                                                 |
+| ------------------ | ----------- | ---------------------------------------------------------------------------- |
+| **Node.js**        | 24.x+       | [nodejs.org](https://nodejs.org)                                             |
+| **npm**            | 11.x+       | Comes with Node.js                                                           |
+| **Flutter**        | 3.38.x+     | [flutter.dev/docs/get-started](https://flutter.dev/docs/get-started/install) |
+| **Dart**           | 3.10.x+     | Comes with Flutter                                                           |
+| **Android Studio** | Latest      | [developer.android.com](https://developer.android.com/studio)                |
+| **Xcode**          | 15+ (macOS) | Mac App Store                                                                |
+| **Git**            | 2.x+        | [git-scm.com](https://git-scm.com)                                           |
 
 ### Installation
 
@@ -298,11 +298,11 @@ flutter doctor
 
 ### Mobile Apps (Flutter)
 
-| App | Package Name | Directory | Port |
-|-----|-------------|-----------|------|
-| User App | `com.anandham.anandham_user` | `apps/mobile_user` | — |
-| Author App | `com.anandham.anandham_author` | `apps/mobile_author` | — |
-| Admin App | `com.anandham.anandham_admin` | `apps/mobile_admin` | — |
+| App        | Package Name                   | Directory            | Port |
+| ---------- | ------------------------------ | -------------------- | ---- |
+| User App   | `com.anandham.anandham_user`   | `apps/mobile_user`   | —    |
+| Author App | `com.anandham.anandham_author` | `apps/mobile_author` | —    |
+| Admin App  | `com.anandham.anandham_admin`  | `apps/mobile_admin`  | —    |
 
 #### Running Mobile Apps
 
@@ -344,11 +344,11 @@ flutter build ios --release
 
 ### Web Apps (Next.js)
 
-| App | Package Name | Directory | Dev Port |
-|-----|-------------|-----------|----------|
-| User Website | `@anandham/web-user` | `apps/web-user` | 3000 |
-| Author Portal | `@anandham/web-author` | `apps/web-author` | 3100 |
-| Admin Dashboard | `@anandham/web-admin` | `apps/web-admin` | 3200 |
+| App             | Package Name           | Directory         | Dev Port |
+| --------------- | ---------------------- | ----------------- | -------- |
+| User Website    | `@anandham/web-user`   | `apps/web-user`   | 3000     |
+| Author Portal   | `@anandham/web-author` | `apps/web-author` | 3100     |
+| Admin Dashboard | `@anandham/web-admin`  | `apps/web-admin`  | 3200     |
 
 #### Running Web Apps
 
@@ -490,11 +490,11 @@ Each web app has its own `vercel.json` configured for Turborepo builds.
 2. **Create 3 projects** — one for each web app
 3. **Configure each project:**
 
-| Project | Root Directory | Build Command | Output Directory |
-|---------|---------------|---------------|-----------------|
-| web-user | `apps/web-user` | `cd ../.. && npx turbo run build --filter=@anandham/web-user` | `.next` |
-| web-author | `apps/web-author` | `cd ../.. && npx turbo run build --filter=@anandham/web-author` | `.next` |
-| web-admin | `apps/web-admin` | `cd ../.. && npx turbo run build --filter=@anandham/web-admin` | `.next` |
+| Project    | Root Directory    | Build Command                                                   | Output Directory |
+| ---------- | ----------------- | --------------------------------------------------------------- | ---------------- |
+| web-user   | `apps/web-user`   | `cd ../.. && npx turbo run build --filter=@anandham/web-user`   | `.next`          |
+| web-author | `apps/web-author` | `cd ../.. && npx turbo run build --filter=@anandham/web-author` | `.next`          |
+| web-admin  | `apps/web-admin`  | `cd ../.. && npx turbo run build --filter=@anandham/web-admin`  | `.next`          |
 
 4. **Set environment variables** in each Vercel project dashboard
 5. **Enable Remote Caching** (optional):
@@ -577,6 +577,7 @@ Each Flutter app follows **Clean Architecture** with 4 layers:
 ```
 
 **Key Patterns:**
+
 - **BLoC** for state management (`flutter_bloc`)
 - **GetIt** for dependency injection (`get_it`)
 - **Dartz** for functional error handling (`Either<Failure, Success>`)
@@ -617,6 +618,7 @@ Each Next.js app follows the **App Router** pattern:
 ```
 
 **Key Patterns:**
+
 - **App Router** with file-based routing
 - **Server Components** by default, **Client Components** where needed
 - **Route Groups** for authentication layout `(auth)/`
@@ -629,34 +631,34 @@ Each Next.js app follows the **App Router** pattern:
 
 ### Root Scripts (run from project root)
 
-| Script | Command | Description |
-|--------|---------|-------------|
-| Build all | `npm run build` | Build all web apps with caching |
-| Dev all | `npm run dev` | Start all web apps in dev mode |
-| Lint all | `npm run lint` | Lint all web packages |
-| Test all | `npm run test` | Run all tests |
-| Clean | `npm run clean` | Clean all build outputs |
-| Format | `npm run format` | Format all files with Prettier |
-| Dev User Web | `npm run dev:web-user` | Start user website only |
-| Dev Author Web | `npm run dev:web-author` | Start author portal only |
-| Dev Admin Web | `npm run dev:web-admin` | Start admin dashboard only |
-| Build User Web | `npm run build:web-user` | Build user website only |
-| Build Author Web | `npm run build:web-author` | Build author portal only |
-| Build Admin Web | `npm run build:web-admin` | Build admin dashboard only |
+| Script           | Command                    | Description                     |
+| ---------------- | -------------------------- | ------------------------------- |
+| Build all        | `npm run build`            | Build all web apps with caching |
+| Dev all          | `npm run dev`              | Start all web apps in dev mode  |
+| Lint all         | `npm run lint`             | Lint all web packages           |
+| Test all         | `npm run test`             | Run all tests                   |
+| Clean            | `npm run clean`            | Clean all build outputs         |
+| Format           | `npm run format`           | Format all files with Prettier  |
+| Dev User Web     | `npm run dev:web-user`     | Start user website only         |
+| Dev Author Web   | `npm run dev:web-author`   | Start author portal only        |
+| Dev Admin Web    | `npm run dev:web-admin`    | Start admin dashboard only      |
+| Build User Web   | `npm run build:web-user`   | Build user website only         |
+| Build Author Web | `npm run build:web-author` | Build author portal only        |
+| Build Admin Web  | `npm run build:web-admin`  | Build admin dashboard only      |
 
 ### Flutter Commands (run from app directory)
 
-| Command | Description |
-|---------|-------------|
-| `flutter pub get` | Install dependencies |
-| `flutter run` | Run on connected device |
-| `flutter run --release` | Run in release mode |
-| `flutter build apk` | Build Android APK |
+| Command                   | Description              |
+| ------------------------- | ------------------------ |
+| `flutter pub get`         | Install dependencies     |
+| `flutter run`             | Run on connected device  |
+| `flutter run --release`   | Run in release mode      |
+| `flutter build apk`       | Build Android APK        |
 | `flutter build appbundle` | Build Android App Bundle |
-| `flutter build ios` | Build iOS |
-| `flutter test` | Run tests |
-| `flutter analyze` | Analyze Dart code |
-| `flutter clean` | Clean build artifacts |
+| `flutter build ios`       | Build iOS                |
+| `flutter test`            | Run tests                |
+| `flutter analyze`         | Analyze Dart code        |
+| `flutter clean`           | Clean build artifacts    |
 
 ---
 
@@ -666,18 +668,19 @@ Each Next.js app follows the **App Router** pattern:
 
 Create `.env.local` in each web app directory (copy from `.env.example`):
 
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `NEXT_PUBLIC_API_URL` | Backend API base URL | Yes |
-| `NEXT_PUBLIC_APP_URL` | Frontend app URL | Yes |
-| `NEXTAUTH_URL` | NextAuth callback URL | Yes |
-| `NEXTAUTH_SECRET` | NextAuth encryption secret | Yes |
-| `NEXT_PUBLIC_ENABLE_ANALYTICS` | Enable analytics tracking | No |
-| `NEXT_PUBLIC_MAINTENANCE_MODE` | Enable maintenance page | No |
+| Variable                       | Description                | Required |
+| ------------------------------ | -------------------------- | -------- |
+| `NEXT_PUBLIC_API_URL`          | Backend API base URL       | Yes      |
+| `NEXT_PUBLIC_APP_URL`          | Frontend app URL           | Yes      |
+| `NEXTAUTH_URL`                 | NextAuth callback URL      | Yes      |
+| `NEXTAUTH_SECRET`              | NextAuth encryption secret | Yes      |
+| `NEXT_PUBLIC_ENABLE_ANALYTICS` | Enable analytics tracking  | No       |
+| `NEXT_PUBLIC_MAINTENANCE_MODE` | Enable maintenance page    | No       |
 
 ### Flutter Apps
 
 API configuration is managed in:
+
 - Shared: `packages/flutter_core/lib/src/constants/api_constants.dart`
 - Per-app: `apps/mobile_*/lib/core/constants/api_constants.dart`
 
@@ -725,14 +728,14 @@ main (production)
       └── release/v1.2.0
 ```
 
-| Branch | Purpose | Merges To |
-|--------|---------|-----------|
-| `main` | Production-ready code | — |
-| `develop` | Integration branch | `main` |
-| `feature/*` | New features | `develop` |
-| `fix/*` | Bug fixes | `develop` |
-| `hotfix/*` | Critical production fixes | `main` + `develop` |
-| `release/*` | Release preparation | `main` + `develop` |
+| Branch      | Purpose                   | Merges To          |
+| ----------- | ------------------------- | ------------------ |
+| `main`      | Production-ready code     | —                  |
+| `develop`   | Integration branch        | `main`             |
+| `feature/*` | New features              | `develop`          |
+| `fix/*`     | Bug fixes                 | `develop`          |
+| `hotfix/*`  | Critical production fixes | `main` + `develop` |
+| `release/*` | Release preparation       | `main` + `develop` |
 
 ---
 

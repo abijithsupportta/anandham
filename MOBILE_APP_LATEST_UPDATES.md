@@ -8,6 +8,7 @@
 ## 🎯 **Complete Feature Status Summary**
 
 ### ✅ Completed Features
+
 - [x] **Display Order Priority System** - All content types display in admin-configured order
 - [x] **Saved Items (Bookmarks)** - Krithis and Keerthanams with tabs
 - [x] **Tabbed Saved Section** - Switch between Krithis and Keerthanams
@@ -25,9 +26,11 @@
 ## 📋 **Authentication Pages**
 
 ### **1. Login Page** (`lib/presentation/pages/auth/login_page.dart`)
+
 **Location**: `c:\Personal Projects\anandham\apps\mobile_user\lib\presentation\pages\auth\login_page.dart`
 
 **Features**:
+
 - ✅ Email validation
 - ✅ Password field with visibility toggle
 - ✅ Loading indicator on sign-in button
@@ -37,6 +40,7 @@
 - ✅ Styled with Google Fonts (Source Serif 4)
 
 **UI Elements**:
+
 ```dart
 - AppBar
 - Heading: "Welcome back"
@@ -52,40 +56,25 @@
 ---
 
 ### **2. Signup/Register Page** (`lib/presentation/pages/auth/register_page.dart`)
+
 **Location**: `c:\Personal Projects\anandham\apps\mobile_user\lib\presentation\pages\auth\register_page.dart`
 
 **Features**:
+
 - ✅ Full name validation
 - ✅ Email validation
-- ✅ Phone number with country code dropdown
-- ✅ Complete address form (house, address, city, state, pincode)
-- ✅ SNDP member conditional fields
 - ✅ Password strength requirements (min 6 chars)
 - ✅ Password confirmation matching
 - ✅ Form validation on all fields
-- ✅ Multi-step form organization
+- ✅ Clean single-screen onboarding form
 
 **Form Sections**:
+
 1. **Personal Details**
    - Full Name
    - Email
-   - Phone (with +91, +971, +1, +966, +44, +968 country codes)
 
-2. **Address Details**
-   - House name
-   - Address (multi-line)
-   - City
-   - State
-   - Pincode/Postal code
-
-3. **SNDP Details** (Conditional)
-   - Toggle: "Are you a member of SNDP Yogam?"
-   - If YES:
-     - Union name
-     - Branch number
-     - Temple name
-
-4. **Security**
+2. **Security**
    - Password (min 6 chars)
    - Confirm Password (must match)
 
@@ -94,46 +83,50 @@
 ---
 
 ## 🏠 **Home Page** (`lib/presentation/pages/home/home_page.dart`)
+
 **Location**: `c:\Personal Projects\anandham\apps\mobile_user\lib\presentation\pages\home\home_page.dart`
 
 **Features**:
+
 - ✅ User greeting with cached profile name
-- ✅ Content type cards fetched from Supabase
-- ✅ Caching (30-minute TTL)
+- ✅ Content type cards fetched through repository/usecase layer
+- ✅ SharedPreferences cache fallback for offline continuity
 - ✅ Pull-to-refresh functionality
-- ✅ Tall AppBar with profile name
-- ✅ Grid/List display of content types
+- ✅ Scrollable card list display of content types
 
 **Key Methods**:
-- `_loadProfileName()` - Fetches and caches user's full name from profiles table
-- `_loadContentTypes()` - Fetches content types from Supabase with caching
-- `_refreshData()` - Refreshes both profile name and content types
+
+- `HomeCubit.loadHome()` - Loads greeting name and content types through usecases
+- `GetProfileNameUseCase` - Retrieves profile display name via repository
+- `GetHomeContentTypesUseCase` - Retrieves content cards via repository
 
 **Caching Keys**:
+
 ```
 home_content_types_cache -> JSON cached in SharedPreferences
 home_profile_name_cache -> User's full name cached
 ```
 
 **Data Flow**:
+
 ```
-Supabase profiles table
-          ↓
-      Cache Check (30 min TTL)
-          ↓
-      Display Name in AppBar
-          ↓
-      content_types table
-          ↓
-      Display Cards
+Presentation (HomePage)
+        ↓
+     HomeCubit
+        ↓
+   Domain Usecases
+        ↓
+Data Repositories (Supabase + cache fallback)
 ```
 
 ---
 
 ## 👤 **Profile Page** (`lib/presentation/pages/profile/profile_page.dart`)
+
 **Location**: `c:\Personal Projects\anandham\apps\mobile_user\lib\presentation\pages\profile\profile_page.dart`
 
 **Features**:
+
 - ✅ Load existing profile data
 - ✅ Edit all profile fields
 - ✅ Country selection (6 countries with codes)
@@ -144,6 +137,7 @@ Supabase profiles table
 - ✅ Theme toggle (Light/Dark)
 
 **Profile Fields**:
+
 - Full name
 - Phone (country code + number)
 - House name
@@ -156,6 +150,7 @@ Supabase profiles table
 - SNDP temple name (if member)
 
 **Supported Countries**:
+
 ```
 India (+91)
 UAE (+971)
@@ -166,11 +161,13 @@ Oman (+968)
 ```
 
 **Data Sources**:
+
 - Loads from `profiles` table on init
 - Stores in `profiles` table on save
 - Uses SharedPreferences for theme preference
 
 **Special Features**:
+
 - Logout confirmation with AlertDialog
 - Pre-populated form from existing data
 - Loading spinner during initial load
@@ -180,9 +177,11 @@ Oman (+968)
 ---
 
 ## 📚 **Saved Items Management** (`lib/presentation/pages/saved/saved_page.dart`)
+
 **Location**: `c:\Personal Projects\anandham\apps\mobile_user\lib\presentation\pages\saved\saved_page.dart`
 
 ### ✅ **NEW: Tabbed Interface**
+
 ```
 ┌──────────────────────────┐
 │ 📖 Krithis │ 🎵 Keerthanams │
@@ -193,6 +192,7 @@ Oman (+968)
 ```
 
 **Tab 1: Krithis (Saved)**
+
 - Uses `SavedCubit` state
 - Orders by `display_order` (admin priority)
 - Falls back to `created_at`
@@ -200,12 +200,14 @@ Oman (+968)
 - Bookmark button to unsave
 
 **Tab 2: Keerthanams (Saved)**
+
 - Uses `KeerthanamSavedCubit` state
 - Orders by `display_order` (admin priority)
 - Shows title AND author name
 - Bookmark button to unsave
 
 **State Management**:
+
 ```
 SavedCubit (Krithis)
 ├── loads from saved_items table
@@ -221,6 +223,7 @@ KeerthanamSavedCubit (Keerthanams)
 ```
 
 **Features**:
+
 - ✅ Stores in `saved_items` table (user_id + content_type + content_id)
 - ✅ Toggle save/unsave per item
 - ✅ Remove from bookmark via remove button
@@ -236,23 +239,27 @@ KeerthanamSavedCubit (Keerthanams)
 ### **All Content Lists Now Use Display Order**:
 
 #### **Krithis List** (`krithis_list_page.dart`)
+
 - Orders by: `display_order ASC (nulls last), created_at DESC`
 - Search functionality
 - Bookmark button integration
 - Tap to view detail
 
 #### **Keerthanams List** (`keerthanams_list_page.dart`)
+
 - Orders by: `display_order ASC (nulls last), created_at DESC`
 - Search functionality
 - Author names shown (if available)
 - Bookmark button integration
 
 #### **Dharmas List** (`dharmas_list_page.dart`)
+
 - Orders by: `display_order ASC (nulls last), created_at DESC`
 - Shows slokas and words
 - Expandable items
 
 #### **Guru Photos List** (`photos_list_page.dart`)
+
 - Orders by: `display_order ASC (nulls last), created_at DESC`
 - Grid layout
 - Image caching
@@ -262,6 +269,7 @@ KeerthanamSavedCubit (Keerthanams)
 ## 💾 **Database Schema Updates**
 
 ### **Added Columns** (Drift Migration v4):
+
 ```dart
 class KrithisLocal {
   ...
@@ -286,6 +294,7 @@ IntColumn get displayOrder => integer().nullable().named('display_order')();
 ```
 
 ### **Existing Tables Used**:
+
 - `krithis` - Main krithis content
 - `guru_keerthanams` - Keerthanams content
 - `dharmas` - Dharma content with slokas
@@ -301,24 +310,28 @@ IntColumn get displayOrder => integer().nullable().named('display_order')();
 ### **Sync Methods Now Include Display Order**:
 
 **syncKrithis()**
+
 ```dart
 // Selects: id, title, description, youtube_url, display_order
 // Orders: display_order ASC (nulls last), created_at DESC
 ```
 
 **syncKeerthanams()**
+
 ```dart
 // Selects: id, title, author_name, description, youtube_url, display_order
 // Orders: display_order ASC (nulls last), created_at DESC
 ```
 
 **syncDharmas()**
+
 ```dart
 // Selects: id, title, description, translation, display_order
 // Orders: display_order ASC (nulls last), created_at DESC
 ```
 
 **syncGuruPhotos()**
+
 ```dart
 // Selects: id, title, description, image_url, display_order
 // Orders: display_order ASC (nulls last), created_at DESC
@@ -331,19 +344,23 @@ IntColumn get displayOrder => integer().nullable().named('display_order')();
 ### **All Query Methods Updated**:
 
 **getKrithis()**
+
 - Orders by display_order (asc), then created_at (desc)
 - Filters: status='published', isDeleted=false
 
 **getKeerthanams()**
+
 - Orders by display_order (asc), then created_at (desc)
 - Filters: status='published', isDeleted=false
 
 **getDharmas()**
+
 - Orders by display_order (asc), then created_at (desc)
 - Filters: status='published', isDeleted=false
 - Includes dharma_items and dharma_words
 
 **getGuruPhotos()**
+
 - Orders by display_order (asc), then created_at (desc)
 - Filters: status='published', isDeleted=false
 
@@ -352,25 +369,31 @@ IntColumn get displayOrder => integer().nullable().named('display_order')();
 ## 🎮 **State Management** (CUBITs)
 
 ### **Krithis**:
+
 - `KrithisListCubit` - Loads from Supabase with display_order
 - `KrithiDetailCubit` - Loads single krithi detail
 
 ### **Keerthanams**:
+
 - `KeerthanamsListCubit` - Loads from Supabase with display_order
 - `KeerthanamDetailCubit` - Loads single keerthanam detail
 - `KeerthanamSavedCubit` - Manages saved keerthanams
 
 ### **Dharmas**:
+
 - `DharmasCubit` - Loads via repository with display_order
 - Sync happens in background
 
 ### **Auth**:
+
 - `AuthCubit` - Login, signup, logout, session check
 
 ### **Theme**:
+
 - `ThemeCubit` - Light/Dark mode toggle
 
 ### **Saved Items**:
+
 - `SavedCubit` - Manages saved krithis
 - `KeerthanamSavedCubit` - Manages saved keerthanams
 
@@ -379,6 +402,7 @@ IntColumn get displayOrder => integer().nullable().named('display_order')();
 ## 📱 **Android Configuration** (`AndroidManifest.xml`)
 
 ### **Permissions Added** (v1.0.0+1):
+
 ```xml
 <!-- Internet & Network -->
 <uses-permission android:name="android.permission.INTERNET" />
@@ -398,6 +422,7 @@ IntColumn get displayOrder => integer().nullable().named('display_order')();
 ## 📦 **Release Build Artifact**
 
 **APK Information**:
+
 - **Location**: `build/app/outputs/flutter-apk/app-release.apk`
 - **Size**: 64.7 MB (optimized, tree-shaken 99.7%)
 - **Build Type**: Release
@@ -421,6 +446,7 @@ IntColumn get displayOrder => integer().nullable().named('display_order')();
 ## 🚀 **Deployment Readiness**
 
 ### **Checklist**:
+
 - [x] All pages implemented and styled
 - [x] State management (BLoC/Cubit) configured
 - [x] Database migrations applied (v4 Drift schema)
@@ -440,12 +466,14 @@ IntColumn get displayOrder => integer().nullable().named('display_order')();
 **Last Web-Admin Commit**: `3abe1ec` (Push completed)
 
 **Pending Mobile Updates**:
+
 - Display order implementation (Completed ✅)
 - Saved items tabs (Completed ✅)
 - Permission additions (Completed ✅)
 - Drift v4 schema migration (Ready ✅)
 
 **Ready to Commit**:
+
 ```bash
 git add apps/mobile_user/
 git commit -m "feat(mobile-user): display order sorting, saved items tabs, android permissions"
@@ -457,27 +485,33 @@ git push
 ## 📌 **File Summary**
 
 ### **Authentication** (2 files)
+
 1. `lib/presentation/pages/auth/login_page.dart` - Login UI & logic
 2. `lib/presentation/pages/auth/register_page.dart` - Signup UI & logic
 
 ### **Profile & Settings** (2 files)
+
 3. `lib/presentation/pages/profile/profile_page.dart` - Edit profile
 4. `lib/presentation/pages/profile/profile_completion_page.dart` - Complete profile on signup
 
 ### **Navigation** (2 files)
+
 5. `lib/presentation/pages/main_shell/main_shell_page.dart` - Bottom nav shell
 6. `lib/presentation/pages/home/home_page.dart` - Home screen with content types
 
 ### **Content Viewing** (1 file)
+
 7. `lib/presentation/pages/saved/saved_page.dart` - Tabbed saved items
 
 ### **Database & Sync** (4 files)
+
 8. `lib/data/local/db/app_database.dart` - Drift schema (v4)
 9. `lib/data/services/content_sync_service.dart` - Sync with display_order
 10. `lib/data/repositories/local_content_repository.dart` - Query with ordering
 11. `android/app/src/main/AndroidManifest.xml` - Permissions
 
 ### **State Management** (8 files)
+
 12. `lib/presentation/blocs/saved/saved_cubit.dart` - Krithis bookmarks
 13. `lib/presentation/blocs/saved/saved_state.dart` - Krithis saved state
 14. `lib/presentation/blocs/keerthanams/keerthanam_saved_cubit.dart` - Keerthanams bookmarks
@@ -490,6 +524,7 @@ git push
 ---
 
 ## ✨ **Version: v1.0.0+1**
+
 **Status**: ✅ Ready for Testing & Distribution  
 **Build Date**: February 18, 2026  
 **Last Updated**: [AUTO-GENERATED]
@@ -522,4 +557,4 @@ git push
 
 **Generated Document**: Mobile User App Complete Feature Status  
 **Author**: Development Team  
-**Timestamp**: 2026-02-18  
+**Timestamp**: 2026-02-18

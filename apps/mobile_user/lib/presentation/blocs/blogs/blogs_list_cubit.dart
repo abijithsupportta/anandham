@@ -1,10 +1,15 @@
-import 'package:anandham_core/anandham_core.dart';
+import 'package:anandham_user/core/di/injection_container.dart';
+import 'package:anandham_user/domain/usecases/get_blogs_page_usecase.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'blogs_list_state.dart';
 
 class BlogsListCubit extends Cubit<BlogsListState> {
-  BlogsListCubit() : super(const BlogsListState.initial());
+  final GetBlogsPageUseCase _getBlogsPageUseCase;
+
+  BlogsListCubit({GetBlogsPageUseCase? getBlogsPageUseCase})
+    : _getBlogsPageUseCase = getBlogsPageUseCase ?? sl<GetBlogsPageUseCase>(),
+      super(const BlogsListState.initial());
 
   static const int _pageSize = 10;
 
@@ -74,20 +79,6 @@ class BlogsListCubit extends Cubit<BlogsListState> {
   Future<List<Map<String, dynamic>>> _fetchPage(int page) async {
     final from = page * _pageSize;
     final to = from + _pageSize - 1;
-
-    final request = SupabaseConfig.client
-        .from('blogs')
-        .select(
-          'id, title, excerpt, cover_images, published_at, created_at, '
-          'author:authors(name)',
-        )
-        .eq('status', 'published')
-        .eq('is_deleted', false);
-
-    final rows = await request
-        .order('published_at', ascending: false, nullsFirst: false)
-        .order('created_at', ascending: false)
-        .range(from, to);
-    return (rows as List<dynamic>).cast<Map<String, dynamic>>();
+    return _getBlogsPageUseCase(from: from, to: to);
   }
 }

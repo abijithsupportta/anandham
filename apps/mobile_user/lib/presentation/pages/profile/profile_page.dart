@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:anandham_core/anandham_core.dart' show SupabaseConfig;
+import 'package:anandham_user/core/di/injection_container.dart';
 import 'package:anandham_user/core/utils/validators.dart';
+import 'package:anandham_user/domain/usecases/get_profile_usecase.dart';
+import 'package:anandham_user/domain/usecases/update_profile_usecase.dart';
 import 'package:anandham_user/presentation/blocs/theme/theme_cubit.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -30,7 +32,8 @@ class _ProfilePageState extends State<ProfilePage> {
   bool _isSndpMember = false;
   bool _isLoading = true;
   bool _isSaving = false;
-  Set<String> _availableProfileColumns = const {};
+  late final GetProfileUseCase _getProfileUseCase;
+  late final UpdateProfileUseCase _updateProfileUseCase;
 
   static const Map<String, String> _countryCodeMap = {
     'India': '+91',
@@ -52,6 +55,8 @@ class _ProfilePageState extends State<ProfilePage> {
   @override
   void initState() {
     super.initState();
+    _getProfileUseCase = sl<GetProfileUseCase>();
+    _updateProfileUseCase = sl<UpdateProfileUseCase>();
     _loadProfile();
   }
 
@@ -74,23 +79,7 @@ class _ProfilePageState extends State<ProfilePage> {
     });
 
     try {
-      final user = SupabaseConfig.currentUser;
-      if (user == null) {
-        return;
-      }
-
-      final List<dynamic> rows = await SupabaseConfig.client
-          .from('profiles')
-          .select()
-          .eq('id', user.id)
-          .limit(1);
-
-      final profile = rows.isNotEmpty
-          ? rows.first as Map<String, dynamic>
-          : <String, dynamic>{};
-      _availableProfileColumns = profile.keys
-          .map((key) => key.toString())
-          .toSet();
+      final profile = await _getProfileUseCase();
 
       _fullNameController.text = (profile['full_name'] as String?) ?? '';
       _selectedCountryCode =
@@ -136,11 +125,6 @@ class _ProfilePageState extends State<ProfilePage> {
       return;
     }
 
-    final user = SupabaseConfig.currentUser;
-    if (user == null) {
-      return;
-    }
-
     setState(() {
       _isSaving = true;
     });
@@ -165,29 +149,7 @@ class _ProfilePageState extends State<ProfilePage> {
             : null,
       };
 
-      final filteredPayload = _availableProfileColumns.isEmpty
-          ? payload
-          : Map<String, dynamic>.fromEntries(
-              payload.entries.where(
-                (entry) => _availableProfileColumns.contains(entry.key),
-              ),
-            );
-
-      try {
-        await SupabaseConfig.client
-            .from('profiles')
-            .update(
-              filteredPayload.isEmpty
-                  ? {'full_name': _fullNameController.text.trim()}
-                  : filteredPayload,
-            )
-            .eq('id', user.id);
-      } catch (_) {
-        await SupabaseConfig.client
-            .from('profiles')
-            .update({'full_name': _fullNameController.text.trim()})
-            .eq('id', user.id);
-      }
+      await _updateProfileUseCase(payload);
 
       if (!mounted) {
         return;

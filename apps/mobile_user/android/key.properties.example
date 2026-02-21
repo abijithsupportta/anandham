@@ -1,0 +1,7 @@
+# Copy this file to key.properties and fill in your production keystore values.
+# This file is safe to commit; key.properties must remain private.
+
+storePassword=YOUR_STORE_PASSWORD
+keyPassword=YOUR_KEY_PASSWORD
+keyAlias=YOUR_KEY_ALIAS
+storeFile=../keystore/upload-keystore.jks

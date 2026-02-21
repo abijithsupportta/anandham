@@ -2,23 +2,17 @@ import 'dart:async';
 
 import 'package:anandham_core/anandham_core.dart';
 import 'package:anandham_user/core/di/injection_container.dart';
-import 'package:anandham_user/data/repositories/local_content_repository.dart';
-import 'package:anandham_user/data/services/content_sync_service.dart';
+import 'package:anandham_user/data/services/saved_items_orchestration_service.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'saved_state.dart';
 
 class SavedCubit extends Cubit<SavedState> {
-  static const String _contentType = 'krithi';
-  final LocalContentRepository _localRepository;
-  final ContentSyncService _syncService;
+  final SavedItemsOrchestrationService _savedService;
 
-  SavedCubit({
-    LocalContentRepository? localRepository,
-    ContentSyncService? syncService,
-  }) : _localRepository = localRepository ?? sl<LocalContentRepository>(),
-       _syncService = syncService ?? sl<ContentSyncService>(),
-       super(const SavedState.initial());
+  SavedCubit({SavedItemsOrchestrationService? savedService})
+    : _savedService = savedService ?? sl<SavedItemsOrchestrationService>(),
+      super(const SavedState.initial());
 
   Future<void> loadSaved({bool forceSync = false}) async {
     emit(state.copyWith(isLoading: state.items.isEmpty, errorMessage: null));
@@ -30,100 +24,39 @@ class SavedCubit extends Cubit<SavedState> {
         return;
       }
 
-      final localIds = await _localRepository.getSavedContentIds(
+      final snapshot = await _savedService.loadSaved(
         userId: user.id,
-        contentType: _contentType,
+        kind: SavedContentKind.krithi,
+        forceSync: forceSync,
       );
-      final localItems = await _localRepository.getKrithisByIds(localIds);
 
       emit(
         state.copyWith(
           isLoading: false,
-          items: localItems,
-          savedIds: localIds.toSet(),
+          items: snapshot.items,
+          savedIds: snapshot.savedIds,
           errorMessage: null,
         ),
       );
-
-      if (forceSync || localIds.isEmpty) {
-        await _syncService.syncSavedItemsForUser(
-          userId: user.id,
-          contentType: _contentType,
-          force: true,
-        );
-        final refreshedIds = await _localRepository.getSavedContentIds(
-          userId: user.id,
-          contentType: _contentType,
-        );
-        var refreshedItems = await _localRepository.getKrithisByIds(
-          refreshedIds,
-        );
-        if (refreshedItems.isEmpty && refreshedIds.isNotEmpty) {
-          await _syncService.syncKrithis(force: true);
-          refreshedItems = await _localRepository.getKrithisByIds(refreshedIds);
-        }
-        emit(
-          state.copyWith(
-            isLoading: false,
-            items: refreshedItems,
-            savedIds: refreshedIds.toSet(),
-            errorMessage: null,
-          ),
-        );
-      } else {
-        unawaited(_syncInBackground(user.id));
-      }
     } catch (e) {
       final user = SupabaseConfig.currentUser;
       if (user == null) {
         emit(state.copyWith(isLoading: false, items: [], savedIds: {}));
         return;
       }
-
-      final localIds = await _localRepository.getSavedContentIds(
+      final snapshot = await _savedService.loadSaved(
         userId: user.id,
-        contentType: _contentType,
+        kind: SavedContentKind.krithi,
       );
-      var localItems = await _localRepository.getKrithisByIds(localIds);
-      if (localItems.isEmpty && localIds.isNotEmpty) {
-        await _syncService.syncKrithis(force: true);
-        localItems = await _localRepository.getKrithisByIds(localIds);
-      }
       emit(
         state.copyWith(
           isLoading: false,
-          items: localItems,
-          savedIds: localIds.toSet(),
+          items: snapshot.items,
+          savedIds: snapshot.savedIds,
           errorMessage: null,
         ),
       );
     }
-  }
-
-  Future<void> _syncInBackground(String userId) async {
-    try {
-      await _syncService.syncSavedItemsForUser(
-        userId: userId,
-        contentType: _contentType,
-      );
-      final refreshedIds = await _localRepository.getSavedContentIds(
-        userId: userId,
-        contentType: _contentType,
-      );
-      var refreshedItems = await _localRepository.getKrithisByIds(refreshedIds);
-      if (refreshedItems.isEmpty && refreshedIds.isNotEmpty) {
-        await _syncService.syncKrithis(force: true);
-        refreshedItems = await _localRepository.getKrithisByIds(refreshedIds);
-      }
-      emit(
-        state.copyWith(
-          isLoading: false,
-          items: refreshedItems,
-          savedIds: refreshedIds.toSet(),
-          errorMessage: null,
-        ),
-      );
-    } catch (_) {}
   }
 
   Future<void> removeSaved(String krithiId) async {
@@ -132,22 +65,18 @@ class SavedCubit extends Cubit<SavedState> {
       return;
     }
 
-    await _localRepository.removeSavedItem(
+    final snapshot = await _savedService.removeSaved(
       userId: user.id,
-      contentType: _contentType,
+      kind: SavedContentKind.krithi,
       contentId: krithiId,
     );
-    await _syncService.enqueuePendingOp(
-      tableRef: 'saved_items',
-      opType: 'delete',
-      payload: {
-        'user_id': user.id,
-        'content_type': _contentType,
-        'content_id': krithiId,
-      },
+    emit(
+      state.copyWith(
+        items: snapshot.items,
+        savedIds: snapshot.savedIds,
+        errorMessage: null,
+      ),
     );
-
-    await loadSaved();
   }
 
   Future<void> toggleSaved(String krithiId) async {
@@ -161,31 +90,19 @@ class SavedCubit extends Cubit<SavedState> {
       return;
     }
 
-    final nextPosition =
-        (await _localRepository.getMaxSavedPosition(
-          userId: user.id,
-          contentType: _contentType,
-        )) ??
-        0;
-
-    await _localRepository.upsertSavedItem(
+    final snapshot = await _savedService.toggleSaved(
       userId: user.id,
-      contentType: _contentType,
+      kind: SavedContentKind.krithi,
       contentId: krithiId,
-      position: nextPosition + 1,
+      currentlySavedIds: state.savedIds,
     );
-    await _syncService.enqueuePendingOp(
-      tableRef: 'saved_items',
-      opType: 'upsert',
-      payload: {
-        'user_id': user.id,
-        'content_type': _contentType,
-        'content_id': krithiId,
-        'position': nextPosition + 1,
-      },
+    emit(
+      state.copyWith(
+        items: snapshot.items,
+        savedIds: snapshot.savedIds,
+        errorMessage: null,
+      ),
     );
-
-    await loadSaved();
   }
 
   Future<void> reorderSaved(int oldIndex, int newIndex) async {
@@ -194,58 +111,14 @@ class SavedCubit extends Cubit<SavedState> {
       return;
     }
 
-    final current = List<Map<String, dynamic>>.from(state.items);
-    if (newIndex > oldIndex) {
-      newIndex -= 1;
-    }
-
-    final moved = current.removeAt(oldIndex);
-    current.insert(newIndex, moved);
-
-    final previousPositions = <String, int>{};
-    for (var i = 0; i < state.items.length; i++) {
-      final id = state.items[i]['id'] as String?;
-      if (id != null) {
-        previousPositions[id] = i + 1;
-      }
-    }
-
-    for (var i = 0; i < current.length; i++) {
-      final id = current[i]['id'] as String?;
-      if (id == null) {
-        continue;
-      }
-      final newPosition = i + 1;
-      if (previousPositions[id] == newPosition) {
-        continue;
-      }
-
-      await _localRepository.updateSavedPosition(
-        userId: user.id,
-        contentType: _contentType,
-        contentId: id,
-        position: newPosition,
-      );
-      await _syncService.enqueuePendingOp(
-        tableRef: 'saved_items',
-        opType: 'upsert',
-        payload: {
-          'user_id': user.id,
-          'content_type': _contentType,
-          'content_id': id,
-          'position': newPosition,
-        },
-      );
-    }
-
-    emit(
-      state.copyWith(
-        items: current,
-        savedIds: current
-            .map((item) => item['id'] as String?)
-            .whereType<String>()
-            .toSet(),
-      ),
+    final snapshot = await _savedService.reorderSaved(
+      userId: user.id,
+      kind: SavedContentKind.krithi,
+      currentItems: state.items,
+      oldIndex: oldIndex,
+      newIndex: newIndex,
     );
+
+    emit(state.copyWith(items: snapshot.items, savedIds: snapshot.savedIds));
   }
 }

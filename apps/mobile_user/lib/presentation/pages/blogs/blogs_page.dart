@@ -1,4 +1,5 @@
 import 'package:anandham_user/app/routes/route_names.dart';
+import 'package:anandham_user/core/di/injection_container.dart';
 import 'package:anandham_user/presentation/blocs/blogs/blogs_list_cubit.dart';
 import 'package:anandham_user/presentation/blocs/blogs/blogs_list_state.dart';
 import 'package:anandham_user/presentation/pages/blogs/widgets/blog_list_item.dart';
@@ -11,7 +12,7 @@ class BlogsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => BlogsListCubit()..loadInitial(),
+      create: (_) => sl<BlogsListCubit>()..loadInitial(),
       child: const _BlogsListView(),
     );
   }
