@@ -12,6 +12,7 @@ const routeNames: Record<string, string> = {
   "content-categories": "Content Categories",
   krithis: "Krithis",
   dharmas: "Dharmas",
+  "guru-stories": "Guru Stories",
   "guru-photos": "Guru Photos",
   settings: "Settings",
   "audit-log": "Audit Log",

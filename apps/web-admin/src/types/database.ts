@@ -15,6 +15,17 @@ export interface Profile {
   id: string;
   full_name: string;
   avatar_url?: string | null;
+  phone_country_code?: string;
+  phone_number?: string;
+  address?: string;
+  house_name?: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
+  is_sndp_member?: boolean;
+  sndp_union_name?: string | null;
+  sndp_branch_number?: string | null;
+  sndp_temple_name?: string | null;
   role: UserRole;
   is_active: boolean;
   created_at: string;
@@ -211,6 +222,25 @@ export interface GuruPhotoImage {
   guru_photo_id: string;
   image_url: string;
   display_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+// ── Guru Stories ──────────────────────────────────────────────────────
+
+export interface GuruStory {
+  id: string;
+  title: string;
+  slug: string;
+  body: string;
+  author_name: string;
+  reference_book: string;
+  status: ContentStatus;
+  published_at?: string | null;
+  is_deleted: boolean;
+  deleted_at?: string | null;
+  created_by?: string | null;
+  updated_by?: string | null;
   created_at: string;
   updated_at: string;
 }

@@ -11,6 +11,7 @@ export const ROUTES = {
   CONTENT_CATEGORIES: "/content-categories",
   KRITHIS: "/krithis",
   DHARMAS: "/dharmas",
+  GURU_STORIES: "/guru-stories",
   GURU_PHOTOS: "/guru-photos",
   SETTINGS: "/settings",
   AUDIT_LOG: "/audit-log",

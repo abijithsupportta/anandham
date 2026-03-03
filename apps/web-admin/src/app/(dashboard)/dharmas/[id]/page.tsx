@@ -3,7 +3,12 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import type { ContentCategory } from "@/types/database";
-import { dharmaService, type DharmaFormInput, type DharmaWordInput } from "@/services/dharma.service";
+import {
+  dharmaService,
+  type DharmaFormInput,
+  type DharmaItemInput,
+  type DharmaWordInput,
+} from "@/services/dharma.service";
 import { useToast } from "@/hooks/useToast";
 import {
   ArrowLeft,
@@ -11,7 +16,6 @@ import {
   Globe,
   Maximize2,
   Minimize2,
-  Type,
   AlignLeft,
   Youtube,
   Plus,
@@ -19,6 +23,7 @@ import {
   BookOpen,
   Languages,
   GripVertical,
+  ScrollText,
 } from "lucide-react";
 import Link from "next/link";
 import PageHeader from "@/components/ui/page-header";
@@ -33,7 +38,7 @@ function countStats(text: string) {
   return { chars, words, lines };
 }
 
-type ExpandedPanel = null | "body" | "translation";
+type ExpandedPanel = null | "meaning";
 
 export default function DharmaFormPage() {
   const router = useRouter();
@@ -45,7 +50,6 @@ export default function DharmaFormPage() {
   const [saving, setSaving] = useState(false);
   const [categories, setCategories] = useState<ContentCategory[]>([]);
   const [expanded, setExpanded] = useState<ExpandedPanel>(null);
-  const bodyRef = useRef<HTMLTextAreaElement>(null);
   const translationRef = useRef<HTMLTextAreaElement>(null);
 
   const [form, setForm] = useState<DharmaFormInput>({
@@ -58,6 +62,9 @@ export default function DharmaFormPage() {
   });
 
   const [words, setWords] = useState<DharmaWordInput[]>([]);
+  const [slokaLines, setSlokaLines] = useState<DharmaItemInput[]>([
+    { text: "", explanation: "", item_number: 1 },
+  ]);
 
   // ── Load data ────────────────────────────────────────────
 
@@ -67,8 +74,9 @@ export default function DharmaFormPage() {
       if (catResult.data) setCategories(catResult.data);
 
       if (!isNew) {
-        const [result, wordsResult] = await Promise.all([
+        const [result, itemsResult, wordsResult] = await Promise.all([
           dharmaService.getById(id),
+          dharmaService.getItems(id),
           dharmaService.getWords(id),
         ]);
 
@@ -86,6 +94,32 @@ export default function DharmaFormPage() {
             youtube_url: result.data.youtube_url ?? "",
             status: result.data.status,
           });
+
+          if (itemsResult.data && itemsResult.data.length > 0) {
+            setSlokaLines(
+              itemsResult.data.map((item) => ({
+                id: item.id,
+                text: item.text,
+                explanation: item.explanation ?? "",
+                item_number: item.item_number,
+              }))
+            );
+          } else if ((result.data.description ?? "").trim()) {
+            const legacyLines = (result.data.description ?? "")
+              .split("\n")
+              .map((line) => line.trim())
+              .filter(Boolean);
+
+            if (legacyLines.length > 0) {
+              setSlokaLines(
+                legacyLines.map((line, index) => ({
+                  text: line,
+                  explanation: "",
+                  item_number: index + 1,
+                }))
+              );
+            }
+          }
         }
         if (wordsResult.data && wordsResult.data.length > 0) {
           setWords(
@@ -110,6 +144,33 @@ export default function DharmaFormPage() {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   }
 
+  // ── Sloka line handlers ────────────────────────────────
+
+  function addSlokaLine() {
+    setSlokaLines((prev) => [
+      ...prev,
+      { text: "", explanation: "", item_number: prev.length + 1 },
+    ]);
+  }
+
+  function updateSlokaLine(index: number, value: string) {
+    setSlokaLines((prev) =>
+      prev.map((line, i) =>
+        i === index ? { ...line, text: value, item_number: i + 1 } : line
+      )
+    );
+  }
+
+  function removeSlokaLine(index: number) {
+    setSlokaLines((prev) => {
+      const filtered = prev.filter((_, i) => i !== index);
+      if (filtered.length === 0) {
+        return [{ text: "", explanation: "", item_number: 1 }];
+      }
+      return filtered.map((line, i) => ({ ...line, item_number: i + 1 }));
+    });
+  }
+
   // ── Word handlers ────────────────────────────────────────
 
   function addWord() {
@@ -132,17 +193,43 @@ export default function DharmaFormPage() {
   // ── Save ─────────────────────────────────────────────────
 
   async function handleSave(publish = false) {
-    if (!form.title.trim()) {
-      toast("Title is required", "error");
+    const normalizedLines = slokaLines
+      .map((line, index) => ({
+        ...line,
+        text: line.text.trim(),
+        item_number: index + 1,
+      }))
+      .filter((line) => line.text.length > 0);
+
+    if (normalizedLines.length === 0) {
+      toast("Add at least one sloka line", "error");
+      return;
+    }
+
+    if (!form.translation.trim()) {
+      toast("Detailed meaning is required", "error");
       return;
     }
 
     setSaving(true);
 
+    const firstSlokaLine = normalizedLines[0]?.text ?? "";
+    const generatedTitleBase = firstSlokaLine.slice(0, 80) || "Dharma";
+    const internalTitle = form.title.trim() || (isNew
+      ? `${generatedTitleBase} ${Date.now()}`
+      : generatedTitleBase);
+
+    const payload: DharmaFormInput = {
+      ...form,
+      title: internalTitle,
+      description: normalizedLines.map((line) => line.text).join("\n"),
+      status: publish ? "published" : form.status,
+    };
+
     // 1. Save the dharma itself
     const result = isNew
-      ? await dharmaService.create({ ...form, status: publish ? "published" : form.status })
-      : await dharmaService.update(id, form, publish);
+      ? await dharmaService.create(payload)
+      : await dharmaService.update(id, payload, publish);
 
     if (result.error) {
       setSaving(false);
@@ -153,6 +240,13 @@ export default function DharmaFormPage() {
     // 2. Save words (only if dharma saved successfully)
     const dharmaId = isNew ? result.data?.id : id;
     if (dharmaId) {
+      const itemResult = await dharmaService.saveItems(dharmaId, normalizedLines);
+      if (itemResult.error) {
+        setSaving(false);
+        toast(`Dharma saved but sloka lines failed: ${itemResult.error}`, "error");
+        return;
+      }
+
       // Filter out completely empty word rows
       const validWords = words.filter((w) => w.word.trim() || w.meaning.trim());
       if (validWords.length > 0 || !isNew) {
@@ -179,26 +273,25 @@ export default function DharmaFormPage() {
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [form, words, isNew, saving]
+    [form, words, slokaLines, isNew, saving]
   );
 
   // Tab key inserts spaces
-  function handleTabKey(e: React.KeyboardEvent<HTMLTextAreaElement>, field: "description" | "translation") {
+  function handleTabKey(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === "Tab") {
       e.preventDefault();
       const ta = e.currentTarget;
       const start = ta.selectionStart;
       const end = ta.selectionEnd;
-      const val = form[field];
+      const val = form.translation;
       const newValue = val.substring(0, start) + "  " + val.substring(end);
-      setForm((prev) => ({ ...prev, [field]: newValue }));
+      setForm((prev) => ({ ...prev, translation: newValue }));
       requestAnimationFrame(() => {
         ta.selectionStart = ta.selectionEnd = start + 2;
       });
     }
   }
 
-  const bodyStats = countStats(form.description);
   const translationStats = countStats(form.translation);
 
   // ── Render ───────────────────────────────────────────────
@@ -224,7 +317,7 @@ export default function DharmaFormPage() {
       {/* ── 1. Metadata Panel ────────────────────────────── */}
       {expanded === null && (
         <div className="rounded-xl border border-border-main bg-card p-5 shadow-sm">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted">Category</label>
               <select
@@ -238,17 +331,6 @@ export default function DharmaFormPage() {
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </select>
-            </div>
-
-            <div className="sm:col-span-2 lg:col-span-2">
-              <label className="mb-1 block text-xs font-semibold uppercase tracking-wider text-muted">Title *</label>
-              <input
-                name="title"
-                value={form.title}
-                onChange={onChange}
-                className="w-full rounded-lg border border-input-border bg-input-bg px-3 py-2 text-sm text-foreground focus:border-indigo-500 dark:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                placeholder="Enter dharma title"
-              />
             </div>
 
             <div>
@@ -268,40 +350,54 @@ export default function DharmaFormPage() {
         </div>
       )}
 
-      {/* ── 2. Body Editor Panel ─────────────────────────── */}
-      {(expanded === null || expanded === "body") && (
-        <EditorPanel
-          label="Body"
-          icon={<Type className="h-4 w-4 text-muted" />}
-          fieldName="description"
-          value={form.description}
-          stats={bodyStats}
-          textareaRef={bodyRef}
-          expanded={expanded === "body"}
-          onToggleExpand={() => {
-            setExpanded(expanded === "body" ? null : "body");
-            setTimeout(() => bodyRef.current?.focus(), 100);
-          }}
-          onChange={onChange}
-          onTabKey={(e) => handleTabKey(e, "description")}
-          placeholder={"Start writing the dharma body here...\n\nTip: Use Ctrl+S to save, Ctrl+Shift+S to publish.\nTab key inserts spaces. Click the expand icon for fullscreen."}
-          statusSelect={
-            !isNew && expanded === null ? (
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-muted">Status:</span>
-                <select
-                  name="status"
-                  value={form.status}
-                  onChange={onChange}
-                  className="rounded-md border border-border-main bg-surface-hover px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 focus:border-indigo-400 dark:border-indigo-500 dark:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-400"
+      {/* ── 2. Sloka Lines ──────────────────────────────── */}
+      {expanded === null && (
+        <div className="rounded-xl border border-border-main bg-card shadow-sm">
+          <div className="flex items-center justify-between border-b border-border-light px-4 py-3">
+            <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <ScrollText className="h-4 w-4 text-muted" />
+              Sloka Lines
+              {slokaLines.length > 0 && (
+                <span className="rounded-full bg-indigo-50 dark:bg-indigo-500/10 px-2 py-0.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400">
+                  {slokaLines.length}
+                </span>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={addSlokaLine}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-500/10 px-3 py-1.5 text-xs font-medium text-indigo-600 dark:text-indigo-400 transition hover:bg-indigo-100 dark:hover:bg-indigo-500/20"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Add Line
+            </button>
+          </div>
+
+          <div className="space-y-2 p-4">
+            {slokaLines.map((line, index) => (
+              <div
+                key={line.id ?? index}
+                className="group grid grid-cols-[auto_1fr_auto] items-start gap-3 rounded-lg border border-border-light bg-surface-hover/50 px-2 py-2 transition hover:border-border-main hover:bg-surface-hover"
+              >
+                <GripVertical className="mt-2 h-4 w-4 cursor-grab text-gray-300 dark:text-gray-600" />
+                <textarea
+                  value={line.text}
+                  onChange={(e) => updateSlokaLine(index, e.target.value)}
+                  className="min-h-[46px] w-full resize-y rounded-md border border-border-main bg-card px-3 py-2 text-sm focus:border-indigo-500 dark:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  placeholder={`Sloka line ${index + 1}`}
+                />
+                <button
+                  type="button"
+                  onClick={() => removeSlokaLine(index)}
+                  className="rounded-md p-1.5 text-gray-300 dark:text-gray-600 transition hover:bg-red-50 dark:hover:bg-red-500/10 hover:text-red-500"
+                  title="Remove line"
                 >
-                  <option value="draft">Draft</option>
-                  <option value="published">Published</option>
-                </select>
+                  <Trash2 className="h-4 w-4" />
+                </button>
               </div>
-            ) : null
-          }
-        />
+            ))}
+          </div>
+        </div>
       )}
 
       {/* ── 3. Words & Meanings ──────────────────────────── */}
@@ -397,23 +493,39 @@ export default function DharmaFormPage() {
         </div>
       )}
 
-      {/* ── 4. Translation Editor Panel ──────────────────── */}
-      {(expanded === null || expanded === "translation") && (
+      {/* ── 4. Detailed Meaning ──────────────────────────── */}
+      {(expanded === null || expanded === "meaning") && (
         <EditorPanel
-          label="Translation"
+          label="Detailed Meaning"
           icon={<Languages className="h-4 w-4 text-muted" />}
           fieldName="translation"
           value={form.translation}
           stats={translationStats}
           textareaRef={translationRef}
-          expanded={expanded === "translation"}
+          expanded={expanded === "meaning"}
           onToggleExpand={() => {
-            setExpanded(expanded === "translation" ? null : "translation");
+            setExpanded(expanded === "meaning" ? null : "meaning");
             setTimeout(() => translationRef.current?.focus(), 100);
           }}
           onChange={onChange}
-          onTabKey={(e) => handleTabKey(e, "translation")}
-          placeholder={"Write the full translation of the dharma here...\n\nThis section provides a complete translation for readers\nwho may not understand the original language."}
+          onTabKey={handleTabKey}
+          placeholder={"Write the full detailed meaning here...\n\nThis section should explain the complete meaning in detail after slokas and word meanings."}
+          statusSelect={
+            !isNew && expanded === null ? (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted">Status:</span>
+                <select
+                  name="status"
+                  value={form.status}
+                  onChange={onChange}
+                  className="rounded-md border border-border-main bg-surface-hover px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 focus:border-indigo-400 dark:border-indigo-500 dark:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                >
+                  <option value="draft">Draft</option>
+                  <option value="published">Published</option>
+                </select>
+              </div>
+            ) : null
+          }
         />
       )}
 

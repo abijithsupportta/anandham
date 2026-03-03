@@ -54,6 +54,7 @@ const sidebarEntries: SidebarEntry[] = [
       { name: "Guru Krithis", href: "/krithis", icon: BookOpen },
       { name: "Guru Keerthanams", href: "/keerthanams", icon: Music },
       { name: "Guru Dharmas", href: "/dharmas", icon: ScrollText },
+      { name: "Guru Stories", href: "/guru-stories", icon: BookOpen },
       { name: "Guru Photos", href: "/guru-photos", icon: ImageIcon },
       { name: "Content Categories", href: "/content-categories", icon: FolderTree },
     ],

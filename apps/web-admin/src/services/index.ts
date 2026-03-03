@@ -1,6 +1,7 @@
 export { contentCategoryService } from "./category.service";
 export { krithiService } from "./krithi.service";
 export { dharmaService } from "./dharma.service";
+export { guruStoryService } from "./guru-story.service";
 export { authorService } from "./author.service";
 export { guruPhotoService } from "./guru-photo.service";
 export { userService } from "./user.service";

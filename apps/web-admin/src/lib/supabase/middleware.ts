@@ -32,9 +32,6 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getSession();
   const user = session?.user ?? null;
 
-  // Restrict access to the super admin email only
-  const SUPER_ADMIN_EMAIL = process.env.SUPER_ADMIN_EMAIL || "info@abijithcb.com";
-
   // Redirect to login if not authenticated (except public routes)
   const publicRoutes = ["/login"];
   const isPublicRoute = publicRoutes.some((route) =>
@@ -48,13 +45,24 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Block non-admin users even if authenticated
-  if (user && user.email !== SUPER_ADMIN_EMAIL && !isPublicRoute) {
-    await supabase.auth.signOut();
-    const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    url.searchParams.set("error", "unauthorized");
-    return NextResponse.redirect(url);
+  // Block users who are not active super_admins
+  if (user && !isPublicRoute) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("role, is_active")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    const isAllowed =
+      profile?.is_active === true && profile?.role === "super_admin";
+
+    if (!isAllowed) {
+      await supabase.auth.signOut();
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      url.searchParams.set("error", "unauthorized");
+      return NextResponse.redirect(url);
+    }
   }
 
   // Redirect authenticated users away from login

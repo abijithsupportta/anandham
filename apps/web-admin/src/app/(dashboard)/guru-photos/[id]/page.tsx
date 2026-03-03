@@ -172,7 +172,7 @@ export default function GuruPhotoFormPage() {
       setForm((prev) => ({ ...prev, image_url: remaining[0] || "" }));
     }
 
-    // Try to delete from R2 (fire-and-forget)
+    // Try to delete from storage (fire-and-forget)
     deleteImage(url).catch(() => {});
   }
 
@@ -359,7 +359,7 @@ export default function GuruPhotoFormPage() {
             {uploading ? (
               <div className="flex flex-col items-center gap-2">
                 <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
-                <p className="text-sm text-muted">Uploading images to R2...</p>
+                <p className="text-sm text-muted">Uploading images to Supabase Storage...</p>
               </div>
             ) : (
               <>

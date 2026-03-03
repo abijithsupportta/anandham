@@ -125,8 +125,8 @@ export default function BlogsPage() {
       </div>
 
       {/* Table */}
-      <div className="overflow-hidden rounded-xl border border-border-main bg-card shadow-sm">
-        <table className="w-full">
+      <div className="overflow-x-auto rounded-xl border border-border-main bg-card shadow-sm">
+        <table className="w-full min-w-[1120px]">
           <thead>
             <tr className="border-b border-border-main bg-surface-hover">
               <th className="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted">
@@ -141,7 +141,7 @@ export default function BlogsPage() {
               <th className="px-6 py-3 text-center text-xs font-semibold uppercase tracking-wider text-muted">
                 Status
               </th>
-              <th className="px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted">
+              <th className="min-w-[360px] px-6 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted">
                 Actions
               </th>
             </tr>
@@ -155,8 +155,10 @@ export default function BlogsPage() {
                       <Newspaper className="h-4 w-4 text-blue-600" />
                     </div>
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold text-foreground">
-                        {blog.title}
+                      <p className="truncate text-sm font-semibold text-foreground" title={blog.title}>
+                        {blog.title.length > 20
+                          ? `${blog.title.slice(0, 20)}...`
+                          : blog.title}
                       </p>
                       <p className="truncate text-xs text-muted">
                         {blog.excerpt
@@ -215,34 +217,47 @@ export default function BlogsPage() {
                 <td className="px-6 py-4 text-center">
                   <StatusBadge status={blog.status} />
                 </td>
-                <td className="px-6 py-4 text-right">
-                  <div className="flex items-center justify-end gap-2">
+                <td className="min-w-[360px] px-6 py-4 text-right">
+                  <div className="flex items-center justify-end gap-2 whitespace-nowrap">
                     <Link
                       href={`/blogs/${blog.id}`}
-                      className="rounded-md p-1.5 text-muted hover:bg-surface-hover"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 rounded-md border border-input-border bg-card px-2.5 py-1.5 text-xs font-medium text-foreground transition hover:bg-surface-hover"
+                      title="View"
+                    >
+                      <Eye className="h-3.5 w-3.5" />
+                      View
+                    </Link>
+                    <Link
+                      href={`/blogs/${blog.id}`}
+                      className="inline-flex items-center gap-1 rounded-md border border-input-border bg-card px-2.5 py-1.5 text-xs font-medium text-foreground transition hover:bg-surface-hover"
                       title="Edit"
                     >
-                      <Pencil className="h-4 w-4" />
+                      <Pencil className="h-3.5 w-3.5" />
+                      Edit
                     </Link>
                     <button
                       onClick={() => handleToggleStatus(blog)}
-                      className="rounded-md p-1.5 text-muted hover:bg-surface-hover"
+                      className="inline-flex items-center gap-1 rounded-md border border-input-border bg-card px-2.5 py-1.5 text-xs font-medium text-foreground transition hover:bg-surface-hover"
                       title={
                         blog.status === "draft" ? "Publish" : "Unpublish"
                       }
                     >
                       {blog.status === "published" ? (
-                        <Eye className="h-4 w-4" />
+                        <Eye className="h-3.5 w-3.5" />
                       ) : (
-                        <Globe className="h-4 w-4" />
+                        <Globe className="h-3.5 w-3.5" />
                       )}
+                      {blog.status === "draft" ? "Publish" : "Unpublish"}
                     </button>
                     <button
                       onClick={() => handleDelete(blog.id)}
-                      className="rounded-md p-1.5 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10"
+                      className="inline-flex items-center gap-1 rounded-md border border-red-200 bg-red-50 px-2.5 py-1.5 text-xs font-medium text-red-600 transition hover:bg-red-100 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-400 dark:hover:bg-red-500/20"
                       title="Delete"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-3.5 w-3.5" />
+                      Delete
                     </button>
                   </div>
                 </td>

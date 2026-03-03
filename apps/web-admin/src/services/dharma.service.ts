@@ -1,4 +1,10 @@
-import type { Dharma, DharmaWord, ContentStatus, ContentCategory } from "@/types/database";
+import type {
+  Dharma,
+  DharmaItem,
+  DharmaWord,
+  ContentStatus,
+  ContentCategory,
+} from "@/types/database";
 import { serviceCall, toSlug, now, getSupabase } from "./base";
 import type { ServiceResult } from "./base";
 
@@ -18,6 +24,13 @@ export interface DharmaWordInput {
   word: string;
   meaning: string;
   display_order: number;
+}
+
+export interface DharmaItemInput {
+  id?: string;
+  text: string;
+  explanation?: string;
+  item_number: number;
 }
 
 // ── Dharma service ─────────────────────────────────────────
@@ -80,6 +93,94 @@ export const dharmaService = {
         .eq("dharma_id", dharmaId)
         .order("display_order", { ascending: true })
     );
+  },
+
+  async getItems(dharmaId: string): Promise<ServiceResult<DharmaItem[]>> {
+    return serviceCall((sb) =>
+      sb
+        .from("dharma_items")
+        .select("*")
+        .eq("dharma_id", dharmaId)
+        .eq("is_deleted", false)
+        .order("item_number", { ascending: true })
+    );
+  },
+
+  async getLineCounts(
+    dharmaIds: string[]
+  ): Promise<ServiceResult<Record<string, number>>> {
+    if (dharmaIds.length === 0) return { data: {}, error: null };
+
+    const sb = getSupabase();
+    const { data, error } = await sb
+      .from("dharma_items")
+      .select("dharma_id")
+      .in("dharma_id", dharmaIds)
+      .eq("is_deleted", false);
+
+    if (error) return { data: null, error: error.message };
+
+    const counts = (data ?? []).reduce<Record<string, number>>((acc, row) => {
+      const dharmaId = row.dharma_id as string;
+      acc[dharmaId] = (acc[dharmaId] ?? 0) + 1;
+      return acc;
+    }, {});
+
+    for (const dharmaId of dharmaIds) {
+      if (!(dharmaId in counts)) counts[dharmaId] = 0;
+    }
+
+    return { data: counts, error: null };
+  },
+
+  async saveItems(
+    dharmaId: string,
+    items: DharmaItemInput[]
+  ): Promise<ServiceResult<null>> {
+    const sb = getSupabase();
+
+    const { data: existing, error: existingError } = await sb
+      .from("dharma_items")
+      .select("id")
+      .eq("dharma_id", dharmaId)
+      .eq("is_deleted", false);
+
+    if (existingError) return { data: null, error: existingError.message };
+
+    const existingIds = new Set((existing ?? []).map((item) => item.id));
+    const incomingIds = new Set(items.filter((item) => item.id).map((item) => item.id));
+
+    const toSoftDelete = [...existingIds].filter((id) => !incomingIds.has(id));
+
+    if (toSoftDelete.length > 0) {
+      const { error: softDeleteError } = await sb
+        .from("dharma_items")
+        .update({ is_deleted: true, deleted_at: now(), updated_at: now() })
+        .in("id", toSoftDelete);
+
+      if (softDeleteError) return { data: null, error: softDeleteError.message };
+    }
+
+    if (items.length > 0) {
+      const rows = items.map((item, index) => ({
+        ...(item.id ? { id: item.id } : {}),
+        dharma_id: dharmaId,
+        item_number: index + 1,
+        text: item.text,
+        explanation: item.explanation ?? "",
+        is_deleted: false,
+        deleted_at: null,
+        updated_at: now(),
+      }));
+
+      const { error } = await sb.from("dharma_items").upsert(rows, {
+        onConflict: "id",
+      });
+
+      if (error) return { data: null, error: error.message };
+    }
+
+    return { data: null, error: null };
   },
 
   async saveWords(dharmaId: string, words: DharmaWordInput[]): Promise<ServiceResult<null>> {

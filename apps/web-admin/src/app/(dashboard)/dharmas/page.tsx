@@ -25,12 +25,35 @@ export default function DharmasPage() {
   const [statusFilter, setStatusFilter] = useState<"all" | ContentStatus>("all");
   const [page, setPage] = useState(1);
   const [orderedDharmas, setOrderedDharmas] = useState<Dharma[]>([]);
+  const [lineCounts, setLineCounts] = useState<Record<string, number>>({});
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [savingOrder, setSavingOrder] = useState(false);
   const perPage = 10;
 
   useEffect(() => {
     setOrderedDharmas(dharmas);
+  }, [dharmas]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadLineCounts() {
+      if (dharmas.length === 0) {
+        if (isMounted) setLineCounts({});
+        return;
+      }
+
+      const result = await dharmaService.getLineCounts(dharmas.map((item) => item.id));
+      if (isMounted && !result.error) {
+        setLineCounts(result.data ?? {});
+      }
+    }
+
+    loadLineCounts();
+
+    return () => {
+      isMounted = false;
+    };
   }, [dharmas]);
 
   const hasOrderChanges =
@@ -181,9 +204,17 @@ export default function DharmasPage() {
                       <ScrollText className="h-4 w-4 text-amber-600" />
                     </div>
                     <div>
-                      <p className="text-sm font-semibold text-foreground">{dharma.title}</p>
+                      <p className="text-sm font-semibold text-foreground">
+                        {(dharma.description ?? "")
+                          .split("\n")
+                          .map((line) => line.trim())
+                          .find(Boolean) ?? "Dharma"}
+                      </p>
                       <p className="text-xs text-muted">
                         {(dharma.description ?? "").slice(0, 60)}{(dharma.description ?? "").length > 60 ? "..." : ""}
+                      </p>
+                      <p className="text-xs text-muted">
+                        {lineCounts[dharma.id] ?? 0} sloka {((lineCounts[dharma.id] ?? 0) === 1 ? "line" : "lines")}
                       </p>
                     </div>
                     {dharma.youtube_url && <Youtube className="h-4 w-4 text-red-500" />}
