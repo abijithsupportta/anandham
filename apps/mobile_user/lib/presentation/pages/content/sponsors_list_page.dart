@@ -24,26 +24,6 @@ class _SponsorsListView extends StatefulWidget {
 }
 
 class _SponsorsListViewState extends State<_SponsorsListView> {
-  final TextEditingController _searchController = TextEditingController();
-
-  @override
-  void initState() {
-    super.initState();
-    _searchController.addListener(_handleSearch);
-  }
-
-  void _handleSearch() {
-    context.read<SponsorsListCubit>().updateQuery(_searchController.text);
-  }
-
-  @override
-  void dispose() {
-    _searchController
-      ..removeListener(_handleSearch)
-      ..dispose();
-    super.dispose();
-  }
-
   double _amountValue(dynamic value) {
     if (value is num) {
       return value.toDouble();
@@ -103,16 +83,7 @@ class _SponsorsListViewState extends State<_SponsorsListView> {
               );
             }
 
-            final query = state.query.trim().toLowerCase();
-            final filtered = query.isEmpty
-                ? state.items
-                : state.items.where((sponsor) {
-                    final name = (sponsor['sponsor_name'] as String? ?? '')
-                        .toLowerCase();
-                    final house = (sponsor['house_name'] as String? ?? '')
-                        .toLowerCase();
-                    return name.contains(query) || house.contains(query);
-                  }).toList();
+            final filtered = state.items;
 
             final visibleAmountTotal = filtered
                 .where(_isAmountVisible)
@@ -122,23 +93,7 @@ class _SponsorsListViewState extends State<_SponsorsListView> {
             return Column(
               children: [
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 10),
-                  child: TextField(
-                    controller: _searchController,
-                    decoration: InputDecoration(
-                      hintText: 'Search sponsors...',
-                      prefixIcon: const Icon(Icons.search_rounded),
-                      suffixIcon: _searchController.text.trim().isNotEmpty
-                          ? IconButton(
-                              icon: const Icon(Icons.clear),
-                              onPressed: _searchController.clear,
-                            )
-                          : null,
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
                   child: Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(14),
@@ -183,13 +138,7 @@ class _SponsorsListViewState extends State<_SponsorsListView> {
                 ),
                 Expanded(
                   child: filtered.isEmpty
-                      ? Center(
-                          child: Text(
-                            query.isEmpty
-                                ? 'No sponsors available'
-                                : 'No sponsors found',
-                          ),
-                        )
+                      ? const Center(child: Text('No sponsors available'))
                       : ListView.separated(
                           padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                           itemCount: filtered.length,
