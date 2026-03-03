@@ -67,7 +67,9 @@ export default function GuruPhotosPage() {
   }
 
   async function handleDelete(id: string) {
+    setDeleting(true);
     const result = await guruPhotoService.softDelete(id);
+    setDeleting(false);
     if (result.error) { toast(result.error, "error"); return; }
     toast("Photo permanently deleted", "success");
     setDeleteConfirm(null);
@@ -226,7 +228,7 @@ export default function GuruPhotosPage() {
           <div className="max-w-md rounded-lg bg-card p-6 shadow-lg">
             <h3 className="text-lg font-semibold text-foreground">Delete Photo?</h3>
             <p className="mt-2 text-sm text-muted">
-              This will permanently delete <strong>{deleteConfirm.title}</strong> from the database. This action cannot be undone.
+              This will permanently delete <strong>{deleteConfirm.title}</strong> from R2 storage and the database. This action cannot be undone.
             </p>
             <div className="mt-6 flex gap-3">
               <button

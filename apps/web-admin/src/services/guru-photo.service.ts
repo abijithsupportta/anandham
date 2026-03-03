@@ -172,11 +172,20 @@ export const guruPhotoService = {
   },
 
   async softDelete(id: string): Promise<ServiceResult<null>> {
-    return serviceCall((sb) =>
-      sb
-        .from("guru_photos")
-        .delete()
-        .eq("id", id)
-    ) as Promise<ServiceResult<null>>;
+    try {
+      const response = await fetch(`/api/guru-photos/${id}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      const payload = await response.json();
+      if (!response.ok) {
+        return { data: null, error: payload?.error || "Delete failed" };
+      }
+
+      return { data: null, error: null };
+    } catch {
+      return { data: null, error: "Network error while deleting guru photo" };
+    }
   },
 };
