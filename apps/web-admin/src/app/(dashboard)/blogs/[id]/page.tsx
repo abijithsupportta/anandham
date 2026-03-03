@@ -35,6 +35,71 @@ function countStats(text: string) {
   return { chars, words, lines };
 }
 
+async function compressImageFile(file: File): Promise<File> {
+  if (!file.type.startsWith("image/")) {
+    return file;
+  }
+
+  const targetBytes = Math.max(40 * 1024, Math.floor(file.size * 0.1));
+  if (file.size <= targetBytes) {
+    return file;
+  }
+
+  const imageBitmap = await createImageBitmap(file);
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+
+  if (!ctx) {
+    imageBitmap.close();
+    return file;
+  }
+
+  const outputType =
+    file.type === "image/png" || file.type === "image/webp"
+      ? "image/webp"
+      : "image/jpeg";
+
+  let width = imageBitmap.width;
+  let height = imageBitmap.height;
+  let quality = 0.82;
+
+  const encode = async (): Promise<Blob> => {
+    canvas.width = width;
+    canvas.height = height;
+    ctx.clearRect(0, 0, width, height);
+    ctx.drawImage(imageBitmap, 0, 0, width, height);
+
+    const blob = await new Promise<Blob | null>((resolve) => {
+      canvas.toBlob(resolve, outputType, quality);
+    });
+
+    return blob ?? file;
+  };
+
+  let compressedBlob = await encode();
+  let attempts = 0;
+
+  while (compressedBlob.size > targetBytes && attempts < 18) {
+    attempts += 1;
+    if (quality > 0.22) {
+      quality -= 0.08;
+    } else {
+      width = Math.max(240, Math.floor(width * 0.82));
+      height = Math.max(180, Math.floor(height * 0.82));
+    }
+    compressedBlob = await encode();
+  }
+
+  imageBitmap.close();
+
+  if (compressedBlob.size >= file.size) {
+    return file;
+  }
+
+  const nextName = file.name.replace(/\.[^.]+$/, outputType === "image/webp" ? ".webp" : ".jpg");
+  return new File([compressedBlob], nextName, { type: outputType });
+}
+
 export default function BlogFormPage() {
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
@@ -198,7 +263,8 @@ export default function BlogFormPage() {
 
     setUploading(true);
     const formData = new FormData();
-    files.forEach((f) => formData.append("files", f));
+  const compressedFiles = await Promise.all(files.map((f) => compressImageFile(f)));
+  compressedFiles.forEach((f) => formData.append("files", f));
     formData.append("folder", "blog-covers");
 
     try {
