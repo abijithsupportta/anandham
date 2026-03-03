@@ -13,5 +13,7 @@ class RouteNames {
   static const String keerthanamsList = '/content/keerthanams';
   static const String keerthanamDetail = '/content/keerthanams/detail';
   static const String photosList = '/content/photos';
+  static const String guruStoriesList = '/content/guru-stories';
+  static const String guruStoryDetail = '/content/guru-stories/detail';
   static const String blogDetail = '/blogs/detail';
 }

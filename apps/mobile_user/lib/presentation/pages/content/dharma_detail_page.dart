@@ -52,13 +52,22 @@ class _DharmaDetailViewState extends State<_DharmaDetailView> {
   }
 
   Widget _sectionCard(BuildContext context, String title, Widget child) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isLight = theme.brightness == Brightness.light;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHigh,
+        color: colorScheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Theme.of(context).dividerColor),
+        border: Border.all(
+          color: isLight
+              ? colorScheme.primary.withValues(alpha: 0.38)
+              : colorScheme.outline.withValues(alpha: 0.7),
+          width: 1.1,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -119,42 +128,90 @@ class _DharmaDetailViewState extends State<_DharmaDetailView> {
       return const SizedBox.shrink();
     }
 
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isLight = theme.brightness == Brightness.light;
+    final borderColor = isLight
+        ? colorScheme.primary.withValues(alpha: 0.52)
+        : colorScheme.outline.withValues(alpha: 0.72);
+    final headerColor = isLight
+        ? colorScheme.primary.withValues(alpha: 0.18)
+        : colorScheme.surfaceContainerHighest;
+    final evenRowColor = isLight
+        ? colorScheme.surfaceContainerLowest
+        : colorScheme.surface;
+    final oddRowColor = isLight
+        ? colorScheme.surfaceContainerLow
+        : colorScheme.surfaceContainerLow;
+
     return _sectionCard(
       context,
       'Words & Meaning',
       Table(
         columnWidths: const {0: FlexColumnWidth(2), 1: FlexColumnWidth(3)},
-        border: TableBorder.symmetric(
-          inside: BorderSide(color: Theme.of(context).dividerColor),
-        ),
-        children: widget.dharma.words
-            .map(
-              (word) => TableRow(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Text(
-                      word.word,
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        fontSize: _fontSize,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
+        border: TableBorder.all(color: borderColor, width: 1.3),
+        children: [
+          TableRow(
+            decoration: BoxDecoration(color: headerColor),
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Text(
+                  'Word',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w900,
+                    color: isLight
+                        ? colorScheme.primary
+                        : colorScheme.onSurface,
                   ),
-                  Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Text(
-                      word.meaning,
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        fontSize: _fontSize,
-                        height: 1.5,
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
-            )
-            .toList(),
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Text(
+                  'Meaning',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w900,
+                    color: isLight
+                        ? colorScheme.primary
+                        : colorScheme.onSurface,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          ...widget.dharma.words.asMap().entries.map((entry) {
+            final index = entry.key;
+            final word = entry.value;
+            return TableRow(
+              decoration: BoxDecoration(
+                color: index.isEven ? evenRowColor : oddRowColor,
+              ),
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Text(
+                    word.word,
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      fontSize: _fontSize,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Text(
+                    word.meaning,
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      fontSize: _fontSize,
+                      height: 1.5,
+                    ),
+                  ),
+                ),
+              ],
+            );
+          }),
+        ],
       ),
     );
   }
@@ -205,8 +262,12 @@ class _DharmaDetailViewState extends State<_DharmaDetailView> {
               color: Theme.of(context).colorScheme.primaryContainer,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: Theme.of(context).colorScheme.primary,
-                width: 1,
+                color: Theme.of(context).colorScheme.primary.withValues(
+                  alpha: Theme.of(context).brightness == Brightness.light
+                      ? 0.65
+                      : 0.9,
+                ),
+                width: 1.2,
               ),
             ),
             child: Text(

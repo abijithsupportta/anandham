@@ -105,23 +105,23 @@ class _MainShellPageState extends State<MainShellPage> {
             },
             destinations: const [
               NavigationDestination(
-                icon: Icon(Icons.home_outlined),
-                selectedIcon: Icon(Icons.home),
+                icon: Icon(Icons.home_rounded),
+                selectedIcon: Icon(Icons.home_filled),
                 label: 'Home',
               ),
               NavigationDestination(
-                icon: Icon(Icons.bookmark_outline),
+                icon: Icon(Icons.bookmark_rounded),
                 selectedIcon: Icon(Icons.bookmark),
                 label: 'Saved',
               ),
               NavigationDestination(
-                icon: Icon(Icons.article_outlined),
-                selectedIcon: Icon(Icons.article),
+                icon: Icon(Icons.auto_stories_rounded),
+                selectedIcon: Icon(Icons.auto_stories),
                 label: 'Blogs',
               ),
               NavigationDestination(
-                icon: Icon(Icons.person_outline),
-                selectedIcon: Icon(Icons.person),
+                icon: Icon(Icons.account_circle_outlined),
+                selectedIcon: Icon(Icons.account_circle),
                 label: 'Profile',
               ),
             ],

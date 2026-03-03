@@ -8,32 +8,42 @@ class AppTheme {
 
   static ThemeData get lightTheme {
     final manjariFamily = GoogleFonts.manjari().fontFamily;
-    final colorScheme = ColorScheme.fromSeed(
-      seedColor: AppColors.primary,
-      brightness: Brightness.light,
-    ).copyWith(
-      primary: AppColors.primary,
-      onPrimary: Colors.white,
-      secondary: const Color(0xFFEF476F),
-      onSecondary: Colors.white,
-      tertiary: const Color(0xFF06B6D4),
-      onTertiary: Colors.white,
-      surface: AppColors.surfaceLight,
-      onSurface: AppColors.textPrimaryLight,
-      error: AppColors.error,
-      onError: Colors.white,
-    );
+    final colorScheme =
+        ColorScheme.fromSeed(
+          seedColor: AppColors.primary,
+          brightness: Brightness.light,
+        ).copyWith(
+          primary: AppColors.primary,
+          onPrimary: Colors.white,
+          secondary: const Color(0xFFEF476F),
+          onSecondary: Colors.white,
+          tertiary: const Color(0xFF06B6D4),
+          onTertiary: Colors.white,
+          surface: AppColors.surfaceLight,
+          surfaceTint: AppColors.primary,
+          surfaceContainerLowest: const Color(0xFFFFFFFF),
+          surfaceContainerLow: const Color(0xFFF7F4FF),
+          surfaceContainer: const Color(0xFFF1EDFF),
+          surfaceContainerHigh: const Color(0xFFEBE6FF),
+          surfaceContainerHighest: const Color(0xFFE2DAFF),
+          onSurface: AppColors.textPrimaryLight,
+          onSurfaceVariant: AppColors.textSecondaryLight,
+          outline: AppColors.borderLight,
+          outlineVariant: AppColors.borderLightSubtle,
+          error: AppColors.error,
+          onError: Colors.white,
+        );
 
     return ThemeData(
       useMaterial3: true,
       fontFamily: manjariFamily,
       brightness: Brightness.light,
       colorScheme: colorScheme,
-      scaffoldBackgroundColor: const Color(0xFFF4F6FF),
+      scaffoldBackgroundColor: AppColors.backgroundLight,
       appBarTheme: AppBarTheme(
         centerTitle: true,
         elevation: 0,
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFFEEE9FF),
         foregroundColor: AppColors.textPrimaryLight,
         surfaceTintColor: colorScheme.primary.withValues(alpha: 0.06),
       ),
@@ -60,30 +70,42 @@ class AppTheme {
           ),
         ),
       ),
-      cardColor: Colors.white,
+      cardColor: colorScheme.surfaceContainerLow,
       cardTheme: CardThemeData(
-        color: Colors.white,
+        color: colorScheme.surfaceContainerLow,
         surfaceTintColor: colorScheme.secondary.withValues(alpha: 0.05),
         elevation: 0,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
       navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: Colors.white,
+        backgroundColor: colorScheme.surfaceContainerLow,
         indicatorColor: colorScheme.primary.withValues(alpha: 0.14),
+        height: 72,
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+        indicatorShape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+        ),
         iconTheme: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return IconThemeData(color: colorScheme.primary);
+            return IconThemeData(color: colorScheme.primary, size: 25);
           }
-          return IconThemeData(color: AppColors.textSecondaryLight);
+          return const IconThemeData(
+            color: AppColors.textSecondaryLight,
+            size: 23,
+          );
         }),
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
             return TextStyle(
               color: colorScheme.primary,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.1,
             );
           }
-          return const TextStyle(color: AppColors.textSecondaryLight);
+          return const TextStyle(
+            color: AppColors.textSecondaryLight,
+            fontWeight: FontWeight.w600,
+          );
         }),
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
@@ -96,12 +118,14 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: const Color(0xFFF8FAFF),
+        fillColor: colorScheme.surfaceContainer,
         labelStyle: const TextStyle(color: AppColors.textSecondaryLight),
         hintStyle: const TextStyle(color: AppColors.textSecondaryLight),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: colorScheme.primary.withValues(alpha: 0.22)),
+          borderSide: BorderSide(
+            color: colorScheme.primary.withValues(alpha: 0.22),
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),

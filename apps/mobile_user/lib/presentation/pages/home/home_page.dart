@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:anandham_core/anandham_core.dart';
 import 'package:anandham_user/app/routes/route_names.dart';
+import 'package:anandham_user/app/theme/app_colors.dart';
 import 'package:anandham_user/core/utils/helpers.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -120,6 +121,15 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  String _localizedDescription(_ContentTypeItem item) {
+    switch (item.name) {
+      case 'sponsors':
+        return 'Sponsor profiles with sponsored amount ranking';
+      default:
+        return item.description;
+    }
+  }
+
   List<_ContentTypeItem> _prepareVisibleContentTypes(
     List<_ContentTypeItem> all,
   ) {
@@ -173,6 +183,8 @@ class _HomePageState extends State<HomePage> {
         return RouteNames.dharmasList;
       case 'guru_keerthanams':
         return RouteNames.keerthanamsList;
+      case 'guru_stories':
+        return RouteNames.guruStoriesList;
       case 'guru_photos':
         return RouteNames.photosList;
       default:
@@ -354,22 +366,28 @@ class _HomePageState extends State<HomePage> {
                                 begin: Alignment.topLeft,
                                 end: Alignment.bottomRight,
                                 colors: [
-                                  accent.withValues(alpha: 0.12),
-                                  accent.withValues(alpha: 0.05),
+                                  isDark
+                                      ? accent.withValues(alpha: 0.16)
+                                      : Colors.white,
+                                  isDark
+                                      ? accent.withValues(alpha: 0.08)
+                                      : accent.withValues(alpha: 0.10),
                                 ],
                               ),
                               borderRadius: BorderRadius.circular(18),
                               border: Border.all(
-                                color: accent.withValues(alpha: 0.2),
+                                color: accent.withValues(
+                                  alpha: isDark ? 0.28 : 0.34,
+                                ),
                                 width: 1.5,
                               ),
                               boxShadow: [
                                 BoxShadow(
                                   color: accent.withValues(
-                                    alpha: isDark ? 0.1 : 0.08,
+                                    alpha: isDark ? 0.12 : 0.10,
                                   ),
-                                  blurRadius: 12,
-                                  offset: const Offset(0, 4),
+                                  blurRadius: 16,
+                                  offset: const Offset(0, 6),
                                 ),
                               ],
                             ),
@@ -415,20 +433,28 @@ class _HomePageState extends State<HomePage> {
                                               .titleLarge
                                               ?.copyWith(
                                                 fontWeight: FontWeight.w700,
-                                                color: accent,
+                                                color: isDark
+                                                    ? accent
+                                                    : AppColors
+                                                          .textPrimaryLight,
                                               ),
                                         ),
-                                        if (item.description.isNotEmpty) ...[
+                                        if (_localizedDescription(
+                                          item,
+                                        ).isNotEmpty) ...[
                                           const SizedBox(height: 6),
                                           Text(
-                                            item.description,
+                                            _localizedDescription(item),
                                             style: Theme.of(context)
                                                 .textTheme
                                                 .bodyMedium
                                                 ?.copyWith(
-                                                  color: Theme.of(context)
-                                                      .colorScheme
-                                                      .onSurfaceVariant,
+                                                  color: isDark
+                                                      ? Theme.of(context)
+                                                            .colorScheme
+                                                            .onSurfaceVariant
+                                                      : AppColors
+                                                            .textSecondaryLight,
                                                   height: 1.3,
                                                 ),
                                             maxLines: 2,
@@ -444,7 +470,9 @@ class _HomePageState extends State<HomePage> {
                                     padding: const EdgeInsets.only(top: 2),
                                     child: Icon(
                                       Icons.chevron_right_rounded,
-                                      color: accent,
+                                      color: isDark
+                                          ? accent
+                                          : accent.withValues(alpha: 0.95),
                                       size: 24,
                                     ),
                                   ),

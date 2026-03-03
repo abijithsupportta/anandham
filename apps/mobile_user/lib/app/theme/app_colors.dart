@@ -9,14 +9,14 @@ class AppColors {
   static const Color primaryDark = Color(0xFF6366F1);
   static const Color primaryDarkHover = Color(0xFF818CF8);
 
-  // Light mode colors
-  static const Color backgroundLight = Color(0xFFF9FAFB);
-  static const Color surfaceLight = Color(0xFFFFFFFF);
-  static const Color borderLight = Color(0xFFE5E7EB);
-  static const Color borderLightSubtle = Color(0xFFF3F4F6);
-  static const Color textPrimaryLight = Color(0xFF111827);
-  static const Color textSecondaryLight = Color(0xFF6B7280);
-  static const Color accentSubtleLight = Color(0xFFEEF2FF);
+  // Light mode colors (violet-tinted)
+  static const Color backgroundLight = Color(0xFFF3F1FF);
+  static const Color surfaceLight = Color(0xFFFCFAFF);
+  static const Color borderLight = Color(0xFFDCD7F6);
+  static const Color borderLightSubtle = Color(0xFFECE8FB);
+  static const Color textPrimaryLight = Color(0xFF1C1742);
+  static const Color textSecondaryLight = Color(0xFF5A5480);
+  static const Color accentSubtleLight = Color(0xFFE9E4FF);
 
   // Dark mode colors
   static const Color backgroundDark = Color(0xFF1E1E1E);
