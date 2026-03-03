@@ -114,23 +114,6 @@ class _DharmaDetailViewState extends State<_DharmaDetailView> {
     );
   }
 
-  Widget _descriptionSection(BuildContext context) {
-    if (widget.dharma.description.trim().isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    return _sectionCard(
-      context,
-      'Overview',
-      Text(
-        widget.dharma.description,
-        style: Theme.of(
-          context,
-        ).textTheme.bodyLarge?.copyWith(fontSize: _fontSize, height: 1.7),
-      ),
-    );
-  }
-
   Widget _wordsSection(BuildContext context) {
     if (widget.dharma.words.isEmpty) {
       return const SizedBox.shrink();
@@ -138,7 +121,7 @@ class _DharmaDetailViewState extends State<_DharmaDetailView> {
 
     return _sectionCard(
       context,
-      'Key Words',
+      'Words & Meaning',
       Table(
         columnWidths: const {0: FlexColumnWidth(2), 1: FlexColumnWidth(3)},
         border: TableBorder.symmetric(
@@ -194,10 +177,10 @@ class _DharmaDetailViewState extends State<_DharmaDetailView> {
         children: [
           Row(
             children: [
-              Expanded(child: _sectionTitle(context, 'Translation')),
+              Expanded(child: _sectionTitle(context, 'Summary')),
               IconButton(
                 icon: const Icon(Icons.copy_rounded),
-                tooltip: 'Copy translation',
+                tooltip: 'Copy summary',
                 onPressed: () async {
                   await Clipboard.setData(
                     ClipboardData(text: widget.dharma.translation),
@@ -207,7 +190,7 @@ class _DharmaDetailViewState extends State<_DharmaDetailView> {
                   }
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text('Translation copied'),
+                      content: Text('Summary copied'),
                       behavior: SnackBarBehavior.floating,
                     ),
                   );
@@ -270,29 +253,6 @@ class _DharmaDetailViewState extends State<_DharmaDetailView> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Theme.of(context).dividerColor),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  widget.dharma.title,
-                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                    fontSize: _fontSize + 6,
-                    fontWeight: FontWeight.w800,
-                    height: 1.3,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-          _descriptionSection(context),
           _slokasSection(context),
           _wordsSection(context),
           _translationSection(context),

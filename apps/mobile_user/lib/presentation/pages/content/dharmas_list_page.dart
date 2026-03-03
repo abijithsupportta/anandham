@@ -26,6 +26,24 @@ class _DharmasListView extends StatefulWidget {
 class _DharmasListViewState extends State<_DharmasListView> {
   final TextEditingController _searchController = TextEditingController();
 
+  String _firstSlokaPreview(DharmaItemView item) {
+    final first = item.slokas.isNotEmpty ? item.slokas.first.text.trim() : '';
+    if (first.isEmpty) {
+      return item.title.length > 10
+          ? '${item.title.substring(0, 10)}...'
+          : item.title;
+    }
+    return first.length > 10 ? '${first.substring(0, 10)}...' : first;
+  }
+
+  String _categoryOf(DharmaItemView item, DharmasState state) {
+    final name = state.categoryById[item.id]?.trim();
+    if (name == null || name.isEmpty) {
+      return 'Others';
+    }
+    return name;
+  }
+
   @override
   void dispose() {
     _searchController.dispose();
@@ -69,8 +87,24 @@ class _DharmasListViewState extends State<_DharmasListView> {
             }
             final title = item.title.toLowerCase();
             final description = item.description.toLowerCase();
-            return title.contains(query) || description.contains(query);
+            final firstSloka = _firstSlokaPreview(item).toLowerCase();
+            final category = _categoryOf(item, state).toLowerCase();
+            return title.contains(query) ||
+                description.contains(query) ||
+                firstSloka.contains(query) ||
+                category.contains(query);
           }).toList();
+
+          final grouped = <String, List<DharmaItemView>>{};
+          for (final item in filtered) {
+            final category = _categoryOf(item, state);
+            grouped.putIfAbsent(category, () => <DharmaItemView>[]).add(item);
+          }
+
+          final sections = grouped.entries.toList()
+            ..sort(
+              (a, b) => a.key.toLowerCase().compareTo(b.key.toLowerCase()),
+            );
 
           return Column(
             children: [
@@ -106,60 +140,132 @@ class _DharmasListViewState extends State<_DharmasListView> {
                               : 'No dharmas found',
                         ),
                       )
-                    : ListView.separated(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        itemCount: filtered.length,
-                        separatorBuilder: (context, index) =>
-                            const SizedBox(height: 12),
-                        itemBuilder: (context, index) {
-                          final item = filtered[index];
+                    : ListView.builder(
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                        itemCount: sections.length,
+                        itemBuilder: (context, sectionIndex) {
+                          final section = sections[sectionIndex];
+                          final category = section.key;
+                          final items = section.value;
 
-                          return InkWell(
-                            onTap: () async {
-                              await Navigator.pushNamed(
-                                context,
-                                RouteNames.dharmaDetail,
-                                arguments: item,
-                              );
-                            },
-                            borderRadius: BorderRadius.circular(16),
-                            child: Container(
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.surface,
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(
-                                  color: Theme.of(context).dividerColor,
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      item.title.length > 50
-                                          ? '${item.title.substring(0, 50)}...'
-                                          : item.title,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .headlineSmall
-                                          ?.copyWith(
-                                            fontWeight: FontWeight.w700,
-                                            fontSize: 20,
-                                          ),
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 14),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Container(
+                                  width: double.infinity,
+                                  margin: const EdgeInsets.only(bottom: 10),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 8,
                                   ),
-                                  const SizedBox(width: 12),
-                                  Icon(
-                                    Icons.arrow_forward_ios,
-                                    size: 18,
+                                  decoration: BoxDecoration(
                                     color: Theme.of(
                                       context,
-                                    ).colorScheme.onSurfaceVariant,
+                                    ).colorScheme.primaryContainer,
+                                    borderRadius: BorderRadius.circular(12),
                                   ),
-                                ],
-                              ),
+                                  child: Text(
+                                    category,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .titleSmall
+                                        ?.copyWith(
+                                          fontWeight: FontWeight.w800,
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.onPrimaryContainer,
+                                        ),
+                                  ),
+                                ),
+                                ...items.asMap().entries.map((entry) {
+                                  final item = entry.value;
+                                  final slokaCount = item.slokas.length;
+
+                                  return Padding(
+                                    padding: EdgeInsets.only(
+                                      bottom: entry.key == items.length - 1
+                                          ? 0
+                                          : 10,
+                                    ),
+                                    child: InkWell(
+                                      onTap: () async {
+                                        await Navigator.pushNamed(
+                                          context,
+                                          RouteNames.dharmaDetail,
+                                          arguments: item,
+                                        );
+                                      },
+                                      borderRadius: BorderRadius.circular(16),
+                                      child: Container(
+                                        padding: const EdgeInsets.all(16),
+                                        decoration: BoxDecoration(
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.surface,
+                                          borderRadius: BorderRadius.circular(
+                                            16,
+                                          ),
+                                          border: Border.all(
+                                            color: Theme.of(
+                                              context,
+                                            ).dividerColor,
+                                          ),
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    _firstSlokaPreview(item),
+                                                    style: Theme.of(context)
+                                                        .textTheme
+                                                        .headlineSmall
+                                                        ?.copyWith(
+                                                          fontWeight:
+                                                              FontWeight.w700,
+                                                          fontSize: 20,
+                                                        ),
+                                                    maxLines: 2,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                  const SizedBox(height: 8),
+                                                  Text(
+                                                    '$slokaCount ${slokaCount == 1 ? 'sloka' : 'slokas'}',
+                                                    style: Theme.of(context)
+                                                        .textTheme
+                                                        .bodySmall
+                                                        ?.copyWith(
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                          color: Theme.of(
+                                                            context,
+                                                          ).colorScheme.primary,
+                                                        ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            const SizedBox(width: 12),
+                                            Icon(
+                                              Icons.arrow_forward_ios,
+                                              size: 18,
+                                              color: Theme.of(
+                                                context,
+                                              ).colorScheme.onSurfaceVariant,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                }),
+                              ],
                             ),
                           );
                         },
