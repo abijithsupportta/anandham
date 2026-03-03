@@ -391,7 +391,8 @@ class ContentSyncService {
 
     final didFlushPendingOps = await flushPendingOps();
     if (!didFlushPendingOps) {
-      return;
+      // Continue pulling server state even if some pending ops are still queued.
+      // This avoids empty saved screens caused by a single stuck pending op.
     }
 
     final rows = await SupabaseConfig.client
@@ -494,11 +495,22 @@ class ContentSyncService {
       ..orderBy([(table) => OrderingTerm.asc(table.createdAt)]);
 
     final ops = await query.get();
+    final currentUserId = SupabaseConfig.currentUser?.id;
     var allSynced = true;
     for (final op in ops) {
       try {
         final payload = jsonDecode(op.payloadJson) as Map<String, dynamic>;
         if (op.tableRef == 'saved_items') {
+          final payloadUserId = payload['user_id'] as String?;
+          if (payloadUserId == null ||
+              currentUserId == null ||
+              payloadUserId != currentUserId) {
+            await (_db.delete(
+              _db.pendingOps,
+            )..where((table) => table.opId.equals(op.opId))).go();
+            continue;
+          }
+
           if (op.opType == 'upsert') {
             await upsertSavedItemCloud(
               userId: payload['user_id'] as String,
@@ -518,13 +530,28 @@ class ContentSyncService {
         await (_db.delete(
           _db.pendingOps,
         )..where((table) => table.opId.equals(op.opId))).go();
-      } catch (_) {
+      } catch (e) {
+        if (_isPermanentPendingOpError(e)) {
+          await (_db.delete(
+            _db.pendingOps,
+          )..where((table) => table.opId.equals(op.opId))).go();
+          continue;
+        }
         allSynced = false;
         break;
       }
     }
 
     return allSynced;
+  }
+
+  bool _isPermanentPendingOpError(Object error) {
+    final message = error.toString().toLowerCase();
+    return message.contains('row-level security') ||
+        message.contains('permission denied') ||
+        message.contains('violates') && message.contains('policy') ||
+        message.contains('jwt') ||
+        message.contains('auth.uid');
   }
 
   DateTime? _toDateTime(dynamic value) {
