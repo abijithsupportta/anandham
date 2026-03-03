@@ -67,7 +67,8 @@ class HomePage extends StatelessWidget {
                     );
                   }
 
-                  if (state.errorMessage != null && state.contentTypes.isEmpty) {
+                  if (state.errorMessage != null &&
+                      state.contentTypes.isEmpty) {
                     return ListView(
                       physics: const AlwaysScrollableScrollPhysics(
                         parent: BouncingScrollPhysics(),
@@ -134,7 +135,9 @@ class HomePage extends StatelessWidget {
                               Text(
                                 greetingText,
                                 textAlign: TextAlign.center,
-                                style: Theme.of(context).textTheme.headlineMedium
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .headlineMedium
                                     ?.copyWith(fontWeight: FontWeight.w700),
                               ),
                             ],

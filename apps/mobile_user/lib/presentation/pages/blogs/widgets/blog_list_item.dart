@@ -1,23 +1,56 @@
 import 'package:flutter/material.dart';
 import 'package:anandham_user/core/utils/extensions.dart';
 import 'package:anandham_user/core/utils/helpers.dart';
+import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 
-class BlogListItem extends StatelessWidget {
+class BlogListItem extends StatefulWidget {
   final Map<String, dynamic> item;
   final VoidCallback onTap;
 
   const BlogListItem({super.key, required this.item, required this.onTap});
 
-  String _coverImageUrl() {
-    final raw = item['cover_images'];
-    if (raw is List) {
-      for (final image in raw) {
-        if (image is String && image.trim().isNotEmpty) {
-          return image;
-        }
-      }
+  @override
+  State<BlogListItem> createState() => _BlogListItemState();
+}
+
+class _BlogListItemState extends State<BlogListItem> {
+  final PageController _mediaPageController = PageController();
+  int _currentMediaIndex = 0;
+
+  @override
+  void dispose() {
+    _mediaPageController.dispose();
+    super.dispose();
+  }
+
+  List<String> _coverImages() {
+    final raw = widget.item['cover_images'];
+    if (raw is! List) {
+      return const [];
     }
-    return '';
+
+    return raw
+        .whereType<String>()
+        .map((image) => image.trim())
+        .where((image) => image.isNotEmpty)
+        .toList();
+  }
+
+  String? _youtubeThumbnailUrl() {
+    final youtubeUrl = (widget.item['youtube_url'] as String? ?? '').trim();
+    if (youtubeUrl.isEmpty) {
+      return null;
+    }
+
+    final videoId =
+        YoutubePlayer.convertUrlToId(youtubeUrl) ??
+        (youtubeUrl.length <= 20 ? youtubeUrl : null);
+
+    if (videoId == null || videoId.isEmpty) {
+      return null;
+    }
+
+    return 'https://img.youtube.com/vi/$videoId/hqdefault.jpg';
   }
 
   String _excerptText(String excerpt) {
@@ -56,18 +89,26 @@ class BlogListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final title = (item['title'] as String?) ?? '';
-    final excerpt = (item['excerpt'] as String?) ?? '';
-    final author = item['author'] as Map<String, dynamic>?;
+    final title = (widget.item['title'] as String?) ?? '';
+    final excerpt = (widget.item['excerpt'] as String?) ?? '';
+    final author = widget.item['author'] as Map<String, dynamic>?;
+    final category = widget.item['category'] as Map<String, dynamic>?;
+    final categoryName = (category?['name'] as String? ?? '').trim();
     final authorName = (author?['name'] as String?) ?? '';
-    final coverUrl = _coverImageUrl();
-    final publishedAt = item['published_at'] ?? item['created_at'];
+    final coverImages = _coverImages();
+    final youtubeThumb = _youtubeThumbnailUrl();
+    final mediaItems = [
+      ...coverImages.map((url) => _MediaItem.image(url)),
+      if (youtubeThumb != null) _MediaItem.youtube(youtubeThumb),
+    ];
+    final publishedAt =
+        widget.item['published_at'] ?? widget.item['created_at'];
     final formattedDate = _formatDate(publishedAt);
     final postedAt = _parseDate(publishedAt);
     final timeAgo = postedAt?.timeAgo ?? '';
 
     return InkWell(
-      onTap: onTap,
+      onTap: widget.onTap,
       borderRadius: BorderRadius.circular(16),
       child: Container(
         decoration: BoxDecoration(
@@ -95,7 +136,7 @@ class BlogListItem extends StatelessWidget {
                 children: [
                   AspectRatio(
                     aspectRatio: 16 / 9,
-                    child: coverUrl.isEmpty
+                    child: mediaItems.isEmpty
                         ? Container(
                             color: Theme.of(
                               context,
@@ -108,22 +149,58 @@ class BlogListItem extends StatelessWidget {
                               ).colorScheme.onSurfaceVariant,
                             ),
                           )
-                        : Image.network(
-                            coverUrl,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) =>
-                                Container(
-                                  color: Theme.of(
-                                    context,
-                                  ).colorScheme.surfaceContainerHighest,
-                                  child: Icon(
-                                    Icons.broken_image_outlined,
-                                    size: 40,
-                                    color: Theme.of(
-                                      context,
-                                    ).colorScheme.onSurfaceVariant,
+                        : PageView.builder(
+                            controller: _mediaPageController,
+                            itemCount: mediaItems.length,
+                            onPageChanged: (index) {
+                              setState(() {
+                                _currentMediaIndex = index;
+                              });
+                            },
+                            itemBuilder: (context, index) {
+                              final media = mediaItems[index];
+                              return Stack(
+                                fit: StackFit.expand,
+                                children: [
+                                  Image.network(
+                                    media.url,
+                                    fit: BoxFit.cover,
+                                    errorBuilder:
+                                        (context, error, stackTrace) =>
+                                            Container(
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .surfaceContainerHighest,
+                                              child: Icon(
+                                                Icons.broken_image_outlined,
+                                                size: 40,
+                                                color: Theme.of(
+                                                  context,
+                                                ).colorScheme.onSurfaceVariant,
+                                              ),
+                                            ),
                                   ),
-                                ),
+                                  if (media.isYoutube)
+                                    Center(
+                                      child: Container(
+                                        width: 52,
+                                        height: 52,
+                                        decoration: BoxDecoration(
+                                          color: Colors.black.withValues(
+                                            alpha: 0.45,
+                                          ),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: const Icon(
+                                          Icons.play_arrow_rounded,
+                                          color: Colors.white,
+                                          size: 34,
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              );
+                            },
                           ),
                   ),
                   Positioned(
@@ -171,6 +248,30 @@ class BlogListItem extends StatelessWidget {
                         ),
                       ),
                     ),
+                  if (mediaItems.length > 1)
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      bottom: 10,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: List.generate(mediaItems.length, (index) {
+                          final selected = index == _currentMediaIndex;
+                          return AnimatedContainer(
+                            duration: const Duration(milliseconds: 180),
+                            margin: const EdgeInsets.symmetric(horizontal: 3),
+                            width: selected ? 16 : 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: selected
+                                  ? Theme.of(context).colorScheme.primary
+                                  : Colors.white.withValues(alpha: 0.75),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                          );
+                        }),
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -187,6 +288,33 @@ class BlogListItem extends StatelessWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
+                  if (categoryName.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.primary.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(999),
+                        border: Border.all(
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.primary.withValues(alpha: 0.30),
+                        ),
+                      ),
+                      child: Text(
+                        categoryName,
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 8),
                   Row(
                     children: [
@@ -254,4 +382,17 @@ class BlogListItem extends StatelessWidget {
       ),
     );
   }
+}
+
+class _MediaItem {
+  final String url;
+  final bool isYoutube;
+
+  const _MediaItem._({required this.url, required this.isYoutube});
+
+  factory _MediaItem.image(String url) =>
+      _MediaItem._(url: url, isYoutube: false);
+
+  factory _MediaItem.youtube(String url) =>
+      _MediaItem._(url: url, isYoutube: true);
 }

@@ -458,19 +458,19 @@ class _ProfilePageState extends State<ProfilePage> {
               const SizedBox(height: 12),
               BlocBuilder<ThemeCubit, ThemeMode>(
                 builder: (context, themeMode) {
-                  final isDarkMode = themeMode == ThemeMode.dark;
+                  final isLightMode = themeMode == ThemeMode.light;
 
                   return Card(
                     child: SwitchListTile.adaptive(
-                      value: isDarkMode,
-                      title: const Text('Dark mode'),
-                      subtitle: const Text('Light mode is default'),
+                      value: isLightMode,
+                      title: const Text('Light mode'),
+                      subtitle: const Text('Default mode is dark'),
                       secondary: Icon(
-                        isDarkMode ? Icons.dark_mode : Icons.light_mode,
+                        isLightMode ? Icons.light_mode : Icons.dark_mode,
                       ),
                       onChanged: (enabled) {
                         context.read<ThemeCubit>().setThemeMode(
-                          enabled ? ThemeMode.dark : ThemeMode.light,
+                          enabled ? ThemeMode.light : ThemeMode.dark,
                         );
                       },
                     ),

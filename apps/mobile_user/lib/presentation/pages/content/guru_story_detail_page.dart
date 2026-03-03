@@ -169,9 +169,7 @@ class _GuruStoryDetailViewState extends State<_GuruStoryDetailView> {
                   ),
                   child: Text(
                     body,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodyLarge?.copyWith(
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       fontSize: _fontSize,
                       height: 1.65,
                     ),

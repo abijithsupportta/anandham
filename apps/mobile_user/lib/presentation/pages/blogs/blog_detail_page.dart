@@ -222,7 +222,7 @@ class _BlogDetailViewState extends State<_BlogDetailView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Blog')),
+      appBar: AppBar(),
       body: BlocConsumer<BlogDetailCubit, BlogDetailState>(
         listener: (context, state) {
           final blog = state.blog;

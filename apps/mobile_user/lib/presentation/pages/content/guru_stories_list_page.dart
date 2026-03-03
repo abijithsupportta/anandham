@@ -26,12 +26,12 @@ class _GuruStoriesListView extends StatefulWidget {
 class _GuruStoriesListViewState extends State<_GuruStoriesListView> {
   final TextEditingController _searchController = TextEditingController();
 
-  String _truncate20(String value) {
+  String _truncate(String value, int maxChars) {
     final trimmed = value.trim();
-    if (trimmed.length <= 20) {
+    if (trimmed.length <= maxChars) {
       return trimmed;
     }
-    return '${trimmed.substring(0, 20)}...';
+    return '${trimmed.substring(0, maxChars)}...';
   }
 
   @override
@@ -97,10 +97,10 @@ class _GuruStoriesListViewState extends State<_GuruStoriesListView> {
             final filtered = query.isEmpty
                 ? state.items
                 : state.items.where((story) {
-                    final title =
-                        (story['title'] as String? ?? '').toLowerCase();
-                    final author =
-                        (story['author_name'] as String? ?? '').toLowerCase();
+                    final title = (story['title'] as String? ?? '')
+                        .toLowerCase();
+                    final author = (story['author_name'] as String? ?? '')
+                        .toLowerCase();
                     return title.contains(query) || author.contains(query);
                   }).toList();
 
@@ -137,18 +137,20 @@ class _GuruStoriesListViewState extends State<_GuruStoriesListView> {
                       : ListView.separated(
                           padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                           itemCount: filtered.length,
-                          separatorBuilder: (_, _) => const SizedBox(height: 12),
+                          separatorBuilder: (_, _) =>
+                              const SizedBox(height: 12),
                           itemBuilder: (context, index) {
                             final story = filtered[index];
-                            final storyId =
-                                (story['id'] as String? ?? '').trim();
-                            final title =
-                                (story['title'] as String? ?? '').trim();
+                            final storyId = (story['id'] as String? ?? '')
+                                .trim();
+                            final title = (story['title'] as String? ?? '')
+                                .trim();
                             final author =
                                 (story['author_name'] as String? ?? '').trim();
-                            final displayTitle = _truncate20(title);
-                            final displayAuthor = _truncate20(
+                            final displayTitle = _truncate(title, 25);
+                            final displayAuthor = _truncate(
                               author.isEmpty ? 'Unknown' : author,
+                              20,
                             );
 
                             return Material(
@@ -227,7 +229,9 @@ class _GuruStoriesListViewState extends State<_GuruStoriesListView> {
                                                 displayTitle,
                                                 maxLines: 2,
                                                 overflow: TextOverflow.ellipsis,
-                                                style: theme.textTheme.titleMedium
+                                                style: theme
+                                                    .textTheme
+                                                    .titleMedium
                                                     ?.copyWith(
                                                       fontWeight:
                                                           FontWeight.w800,
@@ -238,7 +242,9 @@ class _GuruStoriesListViewState extends State<_GuruStoriesListView> {
                                                 'Author: $displayAuthor',
                                                 maxLines: 1,
                                                 overflow: TextOverflow.ellipsis,
-                                                style: theme.textTheme.bodyMedium
+                                                style: theme
+                                                    .textTheme
+                                                    .bodyMedium
                                                     ?.copyWith(
                                                       color: colorScheme
                                                           .onSurfaceVariant,

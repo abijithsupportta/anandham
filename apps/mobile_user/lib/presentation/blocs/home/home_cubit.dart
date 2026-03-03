@@ -11,6 +11,7 @@ class HomeCubit extends Cubit<HomeState> {
 
   static const String _contentTypesCacheKey = 'home_content_types_cache';
   static const String _profileNameCacheKey = 'home_profile_name_cache';
+  static const Duration _networkTimeout = Duration(seconds: 15);
 
   Future<void> loadInitial() async {
     emit(state.copyWith(isLoading: true, errorMessage: null));
@@ -19,7 +20,7 @@ class HomeCubit extends Cubit<HomeState> {
       final results = await Future.wait([
         _loadContentTypes(),
         _loadProfileName(),
-      ]);
+      ]).timeout(_networkTimeout);
 
       final loadedContentTypes = results[0] as List<HomeContentTypeItem>;
       final loadedProfileName = results[1] as String?;
@@ -36,7 +37,8 @@ class HomeCubit extends Cubit<HomeState> {
       emit(
         state.copyWith(
           isLoading: false,
-          errorMessage: 'Unable to load home content',
+          errorMessage:
+              'Unable to load home content. Pull to refresh and try again.',
         ),
       );
     }
@@ -60,7 +62,8 @@ class HomeCubit extends Cubit<HomeState> {
           .from('profiles')
           .select('full_name')
           .eq('id', user.id)
-          .limit(1);
+          .limit(1)
+          .timeout(_networkTimeout);
 
       if (rows.isEmpty) {
         return cachedName;
@@ -89,7 +92,8 @@ class HomeCubit extends Cubit<HomeState> {
             'name, display_name, description, icon, color, table_name, display_order, is_active',
           )
           .eq('is_active', true)
-          .order('display_order', ascending: true);
+          .order('display_order', ascending: true)
+          .timeout(_networkTimeout);
 
       final list = (rows as List<dynamic>);
       await prefs.setString(_contentTypesCacheKey, jsonEncode(list));

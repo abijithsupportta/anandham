@@ -7,6 +7,7 @@ class BlogsListCubit extends Cubit<BlogsListState> {
   BlogsListCubit() : super(const BlogsListState.initial());
 
   static const int _pageSize = 10;
+  static const Duration _networkTimeout = Duration(seconds: 15);
 
   Future<void> loadInitial() async {
     emit(
@@ -78,8 +79,9 @@ class BlogsListCubit extends Cubit<BlogsListState> {
     final request = SupabaseConfig.client
         .from('blogs')
         .select(
-          'id, title, excerpt, cover_images, published_at, created_at, '
-          'author:authors(name)',
+          'id, title, excerpt, cover_images, youtube_url, '
+          'published_at, created_at, '
+          'category:blog_categories(id, name), author:authors(name)',
         )
         .eq('status', 'published')
         .eq('is_deleted', false);
@@ -87,7 +89,8 @@ class BlogsListCubit extends Cubit<BlogsListState> {
     final rows = await request
         .order('published_at', ascending: false, nullsFirst: false)
         .order('created_at', ascending: false)
-        .range(from, to);
+        .range(from, to)
+        .timeout(_networkTimeout);
     return (rows as List<dynamic>).cast<Map<String, dynamic>>();
   }
 }
