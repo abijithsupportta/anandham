@@ -20,7 +20,10 @@ class SavedCubit extends Cubit<SavedState> {
        _syncService = syncService ?? sl<ContentSyncService>(),
        super(const SavedState.initial());
 
-  Future<void> loadSaved({bool forceSync = false}) async {
+  Future<void> loadSaved({
+    bool forceSync = false,
+    bool syncRemote = true,
+  }) async {
     emit(state.copyWith(isLoading: state.items.isEmpty, errorMessage: null));
 
     try {
@@ -45,11 +48,15 @@ class SavedCubit extends Cubit<SavedState> {
         ),
       );
 
+      if (!syncRemote) {
+        return;
+      }
+
       if (forceSync || localIds.isEmpty) {
         await _syncService.syncSavedItemsForUser(
           userId: user.id,
           contentType: _contentType,
-          force: true,
+          force: forceSync,
         );
         final refreshedIds = await _localRepository.getSavedContentIds(
           userId: user.id,
@@ -147,7 +154,7 @@ class SavedCubit extends Cubit<SavedState> {
       },
     );
 
-    await loadSaved();
+    await loadSaved(syncRemote: false);
   }
 
   Future<void> toggleSaved(String krithiId) async {
@@ -185,7 +192,7 @@ class SavedCubit extends Cubit<SavedState> {
       },
     );
 
-    await loadSaved();
+    await loadSaved(syncRemote: false);
   }
 
   Future<void> reorderSaved(int oldIndex, int newIndex) async {

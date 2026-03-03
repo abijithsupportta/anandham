@@ -109,8 +109,12 @@ class _HomePageState extends State<HomePage> {
         return 'ശ്രീനാരായണ ധർമ്മം';
       case 'guru_keerthanams':
         return 'ഗുരുദേവകീർത്തനം';
+      case 'guru_stories':
+        return 'ഗുരു കഥകൾ';
       case 'guru_photos':
         return 'ചിത്രങ്ങൾ';
+      case 'sponsors':
+        return 'സ്പോൺസേഴ്സ്';
       default:
         return item.displayName;
     }
@@ -140,8 +144,12 @@ class _HomePageState extends State<HomePage> {
         return 2;
       case 'guru_keerthanams':
         return 3;
-      case 'guru_photos':
+      case 'guru_stories':
         return 4;
+      case 'guru_photos':
+        return 5;
+      case 'sponsors':
+        return 6;
       default:
         return 50;
     }
