@@ -21,6 +21,7 @@ import {
   Sun,
   Moon,
   Music,
+  HandCoins,
 } from "lucide-react";
 import { useState } from "react";
 import Image from "next/image";
@@ -55,6 +56,7 @@ const sidebarEntries: SidebarEntry[] = [
       { name: "Guru Keerthanams", href: "/keerthanams", icon: Music },
       { name: "Guru Dharmas", href: "/dharmas", icon: ScrollText },
       { name: "Guru Stories", href: "/guru-stories", icon: BookOpen },
+      { name: "Sponsors", href: "/sponsors", icon: HandCoins },
       { name: "Guru Photos", href: "/guru-photos", icon: ImageIcon },
       { name: "Content Categories", href: "/content-categories", icon: FolderTree },
     ],

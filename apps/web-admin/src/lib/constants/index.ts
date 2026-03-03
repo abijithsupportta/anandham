@@ -12,6 +12,7 @@ export const ROUTES = {
   KRITHIS: "/krithis",
   DHARMAS: "/dharmas",
   GURU_STORIES: "/guru-stories",
+  SPONSORS: "/sponsors",
   GURU_PHOTOS: "/guru-photos",
   SETTINGS: "/settings",
   AUDIT_LOG: "/audit-log",

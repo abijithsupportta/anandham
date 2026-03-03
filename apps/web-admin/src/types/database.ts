@@ -245,6 +245,24 @@ export interface GuruStory {
   updated_at: string;
 }
 
+// ── Sponsors ─────────────────────────────────────────────────────────
+
+export interface Sponsor {
+  id: string;
+  sponsor_name: string;
+  house_name: string;
+  photo_url: string;
+  donated_amount: number;
+  status: ContentStatus;
+  published_at?: string | null;
+  is_deleted: boolean;
+  deleted_at?: string | null;
+  created_by?: string | null;
+  updated_by?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 // ── Blog Categories ────────────────────────────────────────────────────
 
 export interface GuruKeerthanam {
