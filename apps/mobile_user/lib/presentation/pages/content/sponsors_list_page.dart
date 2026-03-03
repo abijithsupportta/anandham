@@ -85,11 +85,6 @@ class _SponsorsListViewState extends State<_SponsorsListView> {
 
             final filtered = state.items;
 
-            final visibleAmountTotal = filtered
-                .where(_isAmountVisible)
-                .map((item) => _amountValue(item['donated_amount']))
-                .fold<double>(0, (sum, value) => sum + value);
-
             return Column(
               children: [
                 Padding(
@@ -118,7 +113,7 @@ class _SponsorsListViewState extends State<_SponsorsListView> {
                         const SizedBox(width: 10),
                         Expanded(
                           child: Text(
-                            'Visible total: ${Helpers.formatCurrency(visibleAmountTotal)}',
+                            'Premium Sponsors',
                             style: theme.textTheme.titleSmall?.copyWith(
                               fontWeight: FontWeight.w800,
                               color: colorScheme.onSurface,
