@@ -15,6 +15,7 @@ import 'package:anandham_user/presentation/pages/content/dharma_detail_page.dart
 import 'package:anandham_user/presentation/pages/content/keerthanams_list_page.dart';
 import 'package:anandham_user/presentation/pages/content/keerthanam_detail_page.dart';
 import 'package:anandham_user/presentation/pages/content/photos_list_page.dart';
+import 'package:anandham_user/presentation/pages/content/sponsors_list_page.dart';
 import 'package:anandham_user/presentation/pages/content/guru_stories_list_page.dart';
 import 'package:anandham_user/presentation/pages/content/guru_story_detail_page.dart';
 import 'package:anandham_user/presentation/pages/blogs/blog_detail_page.dart';
@@ -92,6 +93,11 @@ class AppRouter {
       case RouteNames.photosList:
         return MaterialPageRoute(
           builder: (_) => const PhotosListPage(),
+          settings: settings,
+        );
+      case RouteNames.sponsorsList:
+        return MaterialPageRoute(
+          builder: (_) => const SponsorsListPage(),
           settings: settings,
         );
       case RouteNames.guruStoriesList:

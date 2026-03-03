@@ -187,6 +187,8 @@ class _HomePageState extends State<HomePage> {
         return RouteNames.guruStoriesList;
       case 'guru_photos':
         return RouteNames.photosList;
+      case 'sponsors':
+        return RouteNames.sponsorsList;
       default:
         return null;
     }
