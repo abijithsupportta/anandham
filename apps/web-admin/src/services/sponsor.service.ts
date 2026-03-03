@@ -7,6 +7,7 @@ export interface SponsorFormInput {
   house_name: string;
   photo_url: string;
   donated_amount: number;
+  amount_visible: boolean;
   status: ContentStatus;
 }
 
@@ -41,6 +42,7 @@ export const sponsorService = {
           house_name: input.house_name,
           photo_url: input.photo_url,
           donated_amount: input.donated_amount,
+          amount_visible: input.amount_visible,
           status: input.status,
           published_at: input.status === "published" ? timestamp : null,
           created_by: user?.id ?? null,
@@ -69,6 +71,7 @@ export const sponsorService = {
           house_name: input.house_name,
           photo_url: input.photo_url,
           donated_amount: input.donated_amount,
+          amount_visible: input.amount_visible,
           status,
           published_at: status === "published" ? timestamp : null,
           updated_by: user?.id ?? null,

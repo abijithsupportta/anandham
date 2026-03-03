@@ -154,10 +154,14 @@ export default function SponsorsPage() {
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <span className="inline-flex items-center gap-1 text-sm font-semibold text-foreground">
-                      <IndianRupee className="h-3.5 w-3.5 text-emerald-600" />
-                      {formatAmount(Number(sponsor.donated_amount || 0)).replace("₹", "")}
-                    </span>
+                    {sponsor.amount_visible ? (
+                      <span className="inline-flex items-center gap-1 text-sm font-semibold text-foreground">
+                        <IndianRupee className="h-3.5 w-3.5 text-emerald-600" />
+                        {formatAmount(Number(sponsor.donated_amount || 0)).replace("₹", "")}
+                      </span>
+                    ) : (
+                      <span className="text-sm font-medium text-muted">Hidden</span>
+                    )}
                   </td>
                   <td className="px-6 py-4 text-center">
                     <StatusBadge status={sponsor.status} />

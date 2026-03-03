@@ -253,6 +253,7 @@ export interface Sponsor {
   house_name: string;
   photo_url: string;
   donated_amount: number;
+  amount_visible: boolean;
   status: ContentStatus;
   published_at?: string | null;
   is_deleted: boolean;

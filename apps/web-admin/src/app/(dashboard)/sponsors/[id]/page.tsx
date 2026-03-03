@@ -36,6 +36,7 @@ export default function SponsorFormPage() {
     house_name: "",
     photo_url: "",
     donated_amount: 0,
+    amount_visible: true,
     status: "draft",
   });
 
@@ -54,6 +55,7 @@ export default function SponsorFormPage() {
             house_name: result.data.house_name,
             photo_url: result.data.photo_url,
             donated_amount: Number(result.data.donated_amount ?? 0),
+            amount_visible: result.data.amount_visible ?? true,
             status: result.data.status,
           });
         }
@@ -68,6 +70,11 @@ export default function SponsorFormPage() {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) {
     const { name, value } = e.target;
+    if (name === "amount_visible") {
+      const checked = (e.target as HTMLInputElement).checked;
+      setForm((prev) => ({ ...prev, amount_visible: checked }));
+      return;
+    }
     if (name === "donated_amount") {
       setForm((prev) => ({ ...prev, donated_amount: Number(value || 0) }));
       return;
@@ -213,6 +220,24 @@ export default function SponsorFormPage() {
               className="w-full rounded-lg border border-input-border bg-input-bg px-3 py-2 text-sm text-foreground focus:border-indigo-500 dark:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-500"
               placeholder="0.00"
             />
+
+            <label className="mt-3 flex items-center justify-between rounded-lg border border-border-main bg-surface-hover px-3 py-2">
+              <span className="text-xs font-medium text-foreground">Show amount publicly</span>
+              <span className="relative inline-flex h-6 w-11 items-center">
+                <input
+                  type="checkbox"
+                  name="amount_visible"
+                  checked={form.amount_visible}
+                  onChange={onChange}
+                  className="peer sr-only"
+                />
+                <span className="absolute inset-0 rounded-full bg-gray-300 transition peer-checked:bg-indigo-600 dark:bg-gray-600" />
+                <span className="absolute left-0.5 h-5 w-5 rounded-full bg-white transition-transform peer-checked:translate-x-5" />
+              </span>
+            </label>
+            <p className="mt-1 text-xs text-muted">
+              {form.amount_visible ? "Amount will be visible." : "Amount will be hidden."}
+            </p>
           </div>
 
           {!isNew && (
