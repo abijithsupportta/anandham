@@ -79,24 +79,25 @@ export const blogService = {
       return { data: null, error: context.error ?? "Unable to resolve user" };
     }
 
+    const { role, authorId } = context.data;
+
     const isAdmin =
-      context.data.role === "super_admin" || context.data.role === "admin";
+      role === "super_admin" || role === "admin";
 
     let query = getSupabase()
       .from("blogs")
       .select("*, category:blog_categories(id, name), author:authors(id, name)")
-      .eq("id", id)
-      .single();
+      .eq("id", id);
 
-    if (!isAdmin && context.data.authorId) {
-      query = query.eq("author_id", context.data.authorId);
+    if (!isAdmin && authorId) {
+      query = query.eq("author_id", authorId);
     }
 
-    if (!isAdmin && !context.data.authorId) {
+    if (!isAdmin && !authorId) {
       return { data: null, error: "Author profile not found for this account" };
     }
 
-    const { data, error } = await query;
+    const { data, error } = await query.single();
     if (error) return { data: null, error: error.message };
 
     return { data, error: null };
@@ -211,6 +212,7 @@ export const blogService = {
     if (context.error || !context.data) {
       return { data: null, error: context.error ?? "Unable to resolve user" };
     }
+    const currentUserId = context.data.userId;
 
     const authorResult = await blogService.ensureAuthorId();
     if (authorResult.error || !authorResult.data) {
@@ -220,7 +222,7 @@ export const blogService = {
       };
     }
 
-    const authorId = authorResult.data;
+    const ensuredAuthorId = authorResult.data;
 
     return serviceCall((sb) =>
       sb
@@ -233,13 +235,13 @@ export const blogService = {
           cover_images: input.cover_images,
           youtube_url: input.youtube_url || null,
           category_id: input.category_id,
-          author_id: authorId,
+          author_id: ensuredAuthorId,
           language: input.language || "en",
           tags: input.tags,
           status: input.status,
           published_at: isPublished ? timestamp : null,
-          created_by: context.data.userId,
-          updated_by: context.data.userId,
+          created_by: currentUserId,
+          updated_by: currentUserId,
           created_at: timestamp,
           updated_at: timestamp,
         })
@@ -261,9 +263,11 @@ export const blogService = {
       return { data: null, error: context.error ?? "Unable to resolve user" };
     }
 
+    const { role, authorId: currentAuthorId, userId } = context.data;
+
     const isAdmin =
-      context.data.role === "super_admin" || context.data.role === "admin";
-    if (!isAdmin && !context.data.authorId) {
+      role === "super_admin" || role === "admin";
+    if (!isAdmin && !currentAuthorId) {
       return { data: null, error: "Author profile not found for this account" };
     }
 
@@ -275,7 +279,7 @@ export const blogService = {
       };
     }
 
-    const authorId = authorResult.data;
+    const ensuredAuthorId = authorResult.data;
 
     let updateQuery = getSupabase()
       .from("blogs")
@@ -287,18 +291,18 @@ export const blogService = {
         cover_images: input.cover_images,
         youtube_url: input.youtube_url || null,
         category_id: input.category_id,
-        author_id: authorId,
+        author_id: ensuredAuthorId,
         language: input.language || "en",
         tags: input.tags,
         status,
         published_at: publish ? timestamp : undefined,
-        updated_by: context.data.userId,
+        updated_by: userId,
         updated_at: timestamp,
       })
       .eq("id", id);
 
     if (!isAdmin) {
-      updateQuery = updateQuery.eq("author_id", context.data.authorId!);
+      updateQuery = updateQuery.eq("author_id", currentAuthorId!);
     }
 
     const { data, error } = await updateQuery.select().single();
@@ -318,9 +322,11 @@ export const blogService = {
       return { data: null, error: context.error ?? "Unable to resolve user" };
     }
 
+    const { role, authorId, userId } = context.data;
+
     const isAdmin =
-      context.data.role === "super_admin" || context.data.role === "admin";
-    if (!isAdmin && !context.data.authorId) {
+      role === "super_admin" || role === "admin";
+    if (!isAdmin && !authorId) {
       return { data: null, error: "Author profile not found for this account" };
     }
 
@@ -329,13 +335,13 @@ export const blogService = {
       .update({
         status: newStatus,
         published_at: newStatus === "published" ? timestamp : null,
-        updated_by: context.data.userId,
+        updated_by: userId,
         updated_at: timestamp,
       })
       .eq("id", id);
 
     if (!isAdmin) {
-      query = query.eq("author_id", context.data.authorId!);
+      query = query.eq("author_id", authorId!);
     }
 
     const { error } = await query;
@@ -350,9 +356,11 @@ export const blogService = {
       return { data: null, error: context.error ?? "Unable to resolve user" };
     }
 
+    const { role, authorId, userId } = context.data;
+
     const isAdmin =
-      context.data.role === "super_admin" || context.data.role === "admin";
-    if (!isAdmin && !context.data.authorId) {
+      role === "super_admin" || role === "admin";
+    if (!isAdmin && !authorId) {
       return { data: null, error: "Author profile not found for this account" };
     }
 
@@ -361,13 +369,13 @@ export const blogService = {
       .update({
         is_deleted: true,
         deleted_at: now(),
-        updated_by: context.data.userId,
+        updated_by: userId,
         updated_at: now(),
       })
       .eq("id", id);
 
     if (!isAdmin) {
-      query = query.eq("author_id", context.data.authorId!);
+      query = query.eq("author_id", authorId!);
     }
 
     const { error } = await query;
