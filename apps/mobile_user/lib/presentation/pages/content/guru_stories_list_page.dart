@@ -26,6 +26,14 @@ class _GuruStoriesListView extends StatefulWidget {
 class _GuruStoriesListViewState extends State<_GuruStoriesListView> {
   final TextEditingController _searchController = TextEditingController();
 
+  String _truncate20(String value) {
+    final trimmed = value.trim();
+    if (trimmed.length <= 20) {
+      return trimmed;
+    }
+    return '${trimmed.substring(0, 20)}...';
+  }
+
   @override
   void initState() {
     super.initState();
@@ -138,6 +146,10 @@ class _GuruStoriesListViewState extends State<_GuruStoriesListView> {
                                 (story['title'] as String? ?? '').trim();
                             final author =
                                 (story['author_name'] as String? ?? '').trim();
+                            final displayTitle = _truncate20(title);
+                            final displayAuthor = _truncate20(
+                              author.isEmpty ? 'Unknown' : author,
+                            );
 
                             return Material(
                               color: Colors.transparent,
@@ -212,7 +224,7 @@ class _GuruStoriesListViewState extends State<_GuruStoriesListView> {
                                                 CrossAxisAlignment.start,
                                             children: [
                                               Text(
-                                                title,
+                                                displayTitle,
                                                 maxLines: 2,
                                                 overflow: TextOverflow.ellipsis,
                                                 style: theme.textTheme.titleMedium
@@ -223,9 +235,7 @@ class _GuruStoriesListViewState extends State<_GuruStoriesListView> {
                                               ),
                                               const SizedBox(height: 6),
                                               Text(
-                                                author.isEmpty
-                                                    ? 'Author: Unknown'
-                                                    : 'Author: $author',
+                                                'Author: $displayAuthor',
                                                 maxLines: 1,
                                                 overflow: TextOverflow.ellipsis,
                                                 style: theme.textTheme.bodyMedium

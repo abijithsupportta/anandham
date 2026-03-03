@@ -17,10 +17,29 @@ class GuruStoryDetailPage extends StatelessWidget {
   }
 }
 
-class _GuruStoryDetailView extends StatelessWidget {
+class _GuruStoryDetailView extends StatefulWidget {
   final String storyId;
 
   const _GuruStoryDetailView({required this.storyId});
+
+  @override
+  State<_GuruStoryDetailView> createState() => _GuruStoryDetailViewState();
+}
+
+class _GuruStoryDetailViewState extends State<_GuruStoryDetailView> {
+  double _fontSize = 18;
+
+  void _increaseFontSize() {
+    setState(() {
+      _fontSize = (_fontSize + 2).clamp(18, 36);
+    });
+  }
+
+  void _decreaseFontSize() {
+    setState(() {
+      _fontSize = (_fontSize - 2).clamp(18, 36);
+    });
+  }
 
   Widget _metaCard({
     required BuildContext context,
@@ -44,7 +63,9 @@ class _GuruStoryDetailView extends StatelessWidget {
           Expanded(
             child: RichText(
               text: TextSpan(
-                style: Theme.of(context).textTheme.bodyMedium,
+                style: Theme.of(
+                  context,
+                ).textTheme.bodyMedium?.copyWith(fontSize: _fontSize - 2),
                 children: [
                   TextSpan(
                     text: '$label: ',
@@ -63,7 +84,29 @@ class _GuruStoryDetailView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Guru Story')),
+      appBar: AppBar(
+        title: const Text('Guru Story'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.remove),
+            tooltip: 'Decrease font size',
+            onPressed: _decreaseFontSize,
+          ),
+          Center(
+            child: Text(
+              _fontSize.toStringAsFixed(0),
+              style: Theme.of(
+                context,
+              ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
+            ),
+          ),
+          IconButton(
+            icon: const Icon(Icons.add),
+            tooltip: 'Increase font size',
+            onPressed: _increaseFontSize,
+          ),
+        ],
+      ),
       body: SafeArea(
         child: BlocBuilder<GuruStoryDetailCubit, GuruStoryDetailState>(
           builder: (context, state) {
@@ -89,7 +132,7 @@ class _GuruStoryDetailView extends StatelessWidget {
                       OutlinedButton(
                         onPressed: () => context
                             .read<GuruStoryDetailCubit>()
-                            .loadStory(storyId),
+                            .loadStory(widget.storyId),
                         child: const Text('Retry'),
                       ),
                     ],
@@ -111,7 +154,9 @@ class _GuruStoryDetailView extends StatelessWidget {
                 Text(
                   title,
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontSize: _fontSize + 8,
                     fontWeight: FontWeight.w800,
+                    height: 1.3,
                   ),
                 ),
                 const SizedBox(height: 14),
@@ -126,7 +171,10 @@ class _GuruStoryDetailView extends StatelessWidget {
                     body,
                     style: Theme.of(
                       context,
-                    ).textTheme.bodyLarge?.copyWith(height: 1.65),
+                    ).textTheme.bodyLarge?.copyWith(
+                      fontSize: _fontSize,
+                      height: 1.65,
+                    ),
                   ),
                 ),
                 if (author.isNotEmpty)
