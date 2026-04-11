@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ui/theme";
 import { ThemeInitializer } from "@/components/ThemeInitializer";
@@ -34,6 +34,14 @@ export const metadata: Metadata = {
   },
 };
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  themeColor: "#C9A84C",
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -44,11 +52,12 @@ export default function RootLayout({
       <body>
         <ThemeInitializer />
         <ThemeProvider>
-          <Header />
-          <main className="min-h-screen">
-            {children}
-          </main>
-          <Footer />
+          <div id="app-shell">
+            <Header />
+            <main className="app-content">
+              {children}
+            </main>
+          </div>
         </ThemeProvider>
       </body>
     </html>

@@ -17,10 +17,17 @@ export default function KrithiDetailPage() {
   useEffect(() => {
     async function loadKrithi() {
       try {
-        console.log("Loading krithi with slug:", slug);
+        console.log("=== KRITHI DETAIL PAGE DEBUG ===");
+        console.log("URL slug (raw):", slug);
+        console.log("URL slug (decoded):", decodeURIComponent(slug));
+        console.log("URL slug (length):", slug.length);
+        console.log("URL slug (encoded):", encodeURIComponent(decodeURIComponent(slug)));
         
+        // Try to fetch by slug
         const result = await krithiService.getBySlug(slug);
-        console.log("Krithi service result:", result);
+        console.log("Krithi service result (by slug):", result);
+        console.log("Krithi service data:", result.data);
+        console.log("Krithi service error:", result.error);
         
         if (result.error) {
           console.error("Error loading krithi:", result.error);
@@ -31,6 +38,14 @@ export default function KrithiDetailPage() {
         
         if (result.data) {
           console.log("Krithi data found:", result.data);
+          console.log("Krithi ID:", result.data.id);
+          console.log("Krithi title:", result.data.title);
+          console.log("Krithi description:", result.data.description);
+          console.log("Krithi description length:", result.data.description?.length);
+          console.log("Krithi slug from DB:", result.data.slug);
+          console.log("Slug match:", result.data.slug === slug);
+          console.log("Decoded slug match:", result.data.slug === decodeURIComponent(slug));
+          
           // Validate krithi data structure
           if (!result.data.id) {
             setError("Invalid krithi data: missing id");
@@ -58,6 +73,7 @@ export default function KrithiDetailPage() {
             // Don't fail the whole page if slokas fail to load
           }
         } else {
+          console.error("Krithi not found - result.data is null");
           setError("Krithi not found");
         }
       } catch (err) {
@@ -129,17 +145,18 @@ export default function KrithiDetailPage() {
               </div>
             )}
             {krithi.youtube_url && (
-              <a
-                href={krithi.youtube_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
-              >
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
-                </svg>
-                <span className="text-sm font-medium">Watch on YouTube</span>
-              </a>
+              <div className="mt-6">
+                <div className="aspect-video rounded-xl overflow-hidden bg-gray-900">
+                  <iframe
+                    src={krithi.youtube_url.replace('watch?v=', 'embed/')}
+                    title="YouTube video player"
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    allowFullScreen
+                    className="w-full h-full"
+                  />
+                </div>
+              </div>
             )}
           </div>
 

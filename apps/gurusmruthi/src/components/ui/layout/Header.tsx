@@ -17,7 +17,7 @@ export function Header() {
                 Gurusmruthi
               </Link>
               <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300">
-                ശ്രീ നാരായണ ഗുരുദേവകൃതികൾ
+                ഡിജിറ്റൽ ലൈബ്രറി
               </p>
             </div>
           </div>

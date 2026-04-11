@@ -32,9 +32,9 @@ function getIconForContentType(name: string): string {
 
 function getDisplayName(displayName: string): string {
   const malayalamMap: Record<string, string> = {
-    "Sree Narayana Guru Krithis": "ശ്രീ നാരായണ ഗുരുദേവകൃതികൾ",
+    "Sree Narayana Guru Krithis": "ഗുരുദേവകൃതികൾ",
     "Sree Narayana Guru Keerthanams": "ശ്രീ നാരായണ ഗുരുകീർത്തനങ്ങൾ",
-    "Sree Narayana Guru Dharmas": "ശ്രീ നാരായണ ഗുരുധർമങ്ങൾ",
+    "Sree Narayana Guru Dharmas": "ശ്രീ നാരായണ ധർമം",
     "Sree Narayana Guru Photos": "ശ്രീ നാരായണ ഗുരുചിത്രങ്ങൾ",
     "Sree Narayana Guru Stories": "ശ്രീ നാരായണ ഗുരുകഥകൾ",
     "Blogs": "ബ്ലോഗുകൾ",
@@ -162,7 +162,7 @@ export default async function Home() {
 
         {/* Malayalam subtitle */}
         <p className="font-malayalam text-sm sm:text-base" style={{ color: 'var(--color-text)', opacity: 0.7 }}>
-          ശ്രീ നാരായണ ഗുരുദേവകൃതികൾ
+          ഡിജിറ്റൽ ലൈബ്രറി
         </p>
       </div>
 
@@ -220,6 +220,24 @@ export default async function Home() {
             </Link>
           ))}
         </div>
+      </div>
+
+      {/* Developed by */}
+      <div className="text-center py-8">
+        <a
+          href="https://abijithcb.com"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-block px-4 py-2 rounded-lg transition-colors"
+          style={{
+            backgroundColor: 'var(--color-card-bg)',
+            border: '1px solid var(--color-border)',
+            color: 'var(--color-text)',
+            fontSize: '12px'
+          }}
+        >
+          Developed by abijithcb.com
+        </a>
       </div>
     </div>
   );

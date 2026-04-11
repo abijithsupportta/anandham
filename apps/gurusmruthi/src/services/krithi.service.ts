@@ -36,7 +36,7 @@ export const krithiService = {
         .eq("slug", slug)
         .eq("status", "published")
         .eq("is_deleted", false)
-        .single()
+        .maybeSingle()
     );
   },
 
