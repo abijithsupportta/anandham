@@ -2,8 +2,11 @@ class AppConstants {
   AppConstants._();
 
   static const String appName = 'Anandham User';
-  static const String appVersion = '1.0.0';
-  static const int appBuildNumber = 1;
+  static const String appVersion = '5.0.0';
+  static const int appBuildNumber = 9;
+
+  /// Offline content publication generation (must match bundled / synced schema expectations).
+  static const int publicationVersion = 5;
 
   // Storage Keys
   static const String tokenKey = 'auth_token';

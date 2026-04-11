@@ -1,0 +1,65 @@
+@import "tailwindcss";
+
+@variant dark (&:where(.dark, .dark *));
+
+:root {
+  --font-malayalam: var(--font-noto-sans-malayalam);
+  --font-heading: var(--font-playfair-display);
+  --font-body: var(--font-inter);
+  
+  --color-bg-light: #FDF8F0;
+  --color-text-light: #2C1810;
+  --color-gold: #C9A84C;
+  --color-card-bg-light: #FFFFFF;
+  --color-border-light: #E8DCC8;
+  
+  --color-bg-dark: #0D1117;
+  --color-text-dark: #F0EDE8;
+  --color-card-bg-dark: #161B22;
+  --color-border-dark: #30363D;
+}
+
+.light {
+  --color-bg: var(--color-bg-light);
+  --color-text: var(--color-text-light);
+  --color-card-bg: var(--color-card-bg-light);
+  --color-border: var(--color-border-light);
+}
+
+.dark {
+  --color-bg: var(--color-bg-dark);
+  --color-text: var(--color-text-dark);
+  --color-card-bg: var(--color-card-bg-dark);
+  --color-border: var(--color-border-dark);
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+}
+
+.font-heading {
+  font-family: var(--font-heading);
+}
+
+.font-malayalam {
+  font-family: var(--font-malayalam);
+}
+
+/* Card animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.card-animate {
+  animation: fadeIn 0.3s ease-out forwards;
+  opacity: 0;
+}

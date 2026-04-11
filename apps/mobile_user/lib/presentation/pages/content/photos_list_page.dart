@@ -8,7 +8,6 @@ import 'package:anandham_user/data/services/content_sync_service.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 class PhotosListPage extends StatefulWidget {
   const PhotosListPage({super.key});
@@ -244,50 +243,6 @@ class _PhotosListPageState extends State<PhotosListPage> {
     } catch (_) {}
   }
 
-  Future<bool> _requestStoragePermission() async {
-    if (Platform.isAndroid) {
-      var status = await Permission.photos.request();
-      if (status.isGranted) {
-        return true;
-      }
-
-      status = await Permission.storage.request();
-      if (status.isGranted) {
-        return true;
-      }
-
-      if (status.isPermanentlyDenied && mounted) {
-        await showDialog<void>(
-          context: context,
-          builder: (ctx) => AlertDialog(
-            title: const Text('Permission required'),
-            content: const Text(
-              'Please enable storage/photos permission in app settings.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(ctx).pop(),
-                child: const Text('Cancel'),
-              ),
-              TextButton(
-                onPressed: () async {
-                  Navigator.of(ctx).pop();
-                  await openAppSettings();
-                },
-                child: const Text('Open Settings'),
-              ),
-            ],
-          ),
-        );
-      }
-
-      return false;
-    }
-
-    final status = await Permission.photos.request();
-    return status.isGranted;
-  }
-
   String _sanitizeBaseName(String input) {
     final cleaned = input.replaceAll(RegExp(r'[^\w\s-]'), '_').trim();
     return cleaned.isEmpty ? 'image' : cleaned;
@@ -298,22 +253,19 @@ class _PhotosListPageState extends State<PhotosListPage> {
       return;
     }
 
-    final hasPermission = await _requestStoragePermission();
-    if (!hasPermission) {
-      return;
-    }
-
     try {
       final dio = Dio();
-      final directory = Platform.isAndroid
-          ? Directory('/storage/emulated/0/Download')
-          : await getApplicationDocumentsDirectory();
+      final baseDir = await getApplicationDocumentsDirectory();
+      final folder = Directory('${baseDir.path}/photo_downloads');
+      if (!await folder.exists()) {
+        await folder.create(recursive: true);
+      }
 
       final base = _sanitizeBaseName(title);
       final stamp = DateTime.now().millisecondsSinceEpoch;
 
       for (var i = 0; i < imageUrls.length; i++) {
-        final path = '${directory.path}/${base}_${i + 1}_$stamp.jpg';
+        final path = '${folder.path}/${base}_${i + 1}_$stamp.jpg';
         await dio.download(imageUrls[i], path);
       }
 
@@ -321,7 +273,11 @@ class _PhotosListPageState extends State<PhotosListPage> {
         return;
       }
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${imageUrls.length} image(s) downloaded')),
+        SnackBar(
+          content: Text(
+            '${imageUrls.length} image(s) saved in this app\'s storage folder.',
+          ),
+        ),
       );
     } catch (e) {
       if (!mounted) {

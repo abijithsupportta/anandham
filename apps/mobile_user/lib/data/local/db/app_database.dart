@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:anandham_user/core/constants/app_constants.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:path/path.dart' as p;
@@ -173,12 +174,18 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (m) async {
       await m.createAll();
+      await into(syncMeta).insertOnConflictUpdate(
+        SyncMetaCompanion(
+          key: const Value('publication_version'),
+          value: Value('${AppConstants.publicationVersion}'),
+        ),
+      );
     },
     onUpgrade: (m, from, to) async {
       try {
@@ -197,6 +204,14 @@ class AppDatabase extends _$AppDatabase {
         }
         if (from < 5) {
           await m.createTable(guruPhotoImagesLocal);
+        }
+        if (from < 6) {
+          await into(syncMeta).insertOnConflictUpdate(
+            SyncMetaCompanion(
+              key: const Value('publication_version'),
+              value: Value('${AppConstants.publicationVersion}'),
+            ),
+          );
         }
       } catch (e) {
         // If migration fails, log error but don't crash app
