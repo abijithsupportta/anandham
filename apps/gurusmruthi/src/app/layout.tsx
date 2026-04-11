@@ -4,6 +4,7 @@ import { ThemeProvider } from "@/components/ui/theme";
 import { ThemeInitializer } from "@/components/ThemeInitializer";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import AppDownloadButton from "@/components/AppDownloadButton";
 import { Noto_Sans_Malayalam, Playfair_Display, Inter } from "next/font/google";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://gurusmruthi.abijithcb.com";
@@ -136,6 +137,7 @@ export default function RootLayout({
               {children}
             </main>
           </div>
+          <AppDownloadButton />
         </ThemeProvider>
       </body>
     </html>
