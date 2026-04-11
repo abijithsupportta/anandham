@@ -5,6 +5,7 @@ import type { Krithi } from "@/types/database";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
+import KrithiSchema from "@/components/seo/KrithiSchema";
 
 export default function KrithiDetailPage() {
   const params = useParams();
@@ -58,6 +59,7 @@ export default function KrithiDetailPage() {
 
   return (
     <div className="no-select">
+      {krithi && <KrithiSchema krithi={krithi} />}
       {/* Sticky Sub-Header */}
       <div className="sticky top-0 z-50" style={{ height: '52px', backgroundColor: 'var(--color-bg)', borderBottom: '1px solid rgba(201, 168, 76, 0.15)' }}>
         <div className="h-full flex items-center justify-between px-4">

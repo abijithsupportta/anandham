@@ -1,6 +1,7 @@
 import { contentTypeService } from "@/services";
 import type { ContentType } from "@/types/database";
 import Link from "next/link";
+import WebsiteSchema from "@/components/seo/WebsiteSchema";
 
 async function getContentTypes() {
   try {
@@ -133,6 +134,7 @@ export default async function Home() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+      <WebsiteSchema />
       {/* Hero Section */}
       <div className="flex flex-col items-center mb-16 sm:mb-20">
         {/* Guru photo in circular frame */}
