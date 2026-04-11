@@ -62,13 +62,13 @@ export default function AppDownloadButton() {
                 className="text-xl font-bold mb-2"
                 style={{ color: "var(--color-text)" }}
               >
-                Download Gurusmruthi App
+                Download Anandham App
               </h3>
               <p
                 className="text-sm mb-6"
                 style={{ color: "var(--color-text-muted)" }}
               >
-                Get the complete experience on your mobile device
+                Digital research center for Sree Narayana Guru studies
               </p>
               <a
                 href={PLAY_STORE_URL}
